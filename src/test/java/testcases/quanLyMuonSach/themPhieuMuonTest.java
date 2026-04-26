@@ -8,9 +8,11 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import pageobjects.HomePage;
 import pageobjects.LoginPage;
+import pageobjects.SidebarPage;
+import pageobjects.nguoiDungPage;
 import pageobjects.quanLyMuonSachPage;
 
-public class themPhieuMuon {
+public class themPhieuMuonTest {
 
     @BeforeMethod
     public void setupLogin() {
@@ -31,17 +33,21 @@ public class themPhieuMuon {
         LoginPage loginPage = homePage.gotoLoginPage();
         loginPage.login(Constant.USERNAME, Constant.PASSWORD);
 
-        // 3. Sau khi login, dùng sidebar để vào trang mượn sách
-        loginPage.gotoBorrow();
+
     }
 
     @Test()
     public void BR_F001() {
+        SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
+        sidebarPage.gotoReaders();
+        nguoiDungPage nguoiDung = new nguoiDungPage();
+        String maDocGiaHopLe = nguoiDung.getUnqualifiedReaderID();
+        sidebarPage.gotoBorrow();
 
         muonSachPage.clickThemPhieuMuon();
-        muonSachPage.enterMaNguoiDung("1");
-        muonSachPage.enterMaSachAtRow(0, "MS0");
+        muonSachPage.enterMaNguoiDung(maDocGiaHopLe);
+        muonSachPage.enterMaSachAtRow(0, "MS 0");
         muonSachPage.clickLuuPhieuMuon();
 
         String expected = "Thêm thông tin mượn sách thành công";
@@ -61,25 +67,56 @@ public class themPhieuMuon {
         String actualError = muonSachPage.getToastMessage();
         Assert.assertEquals(actualError, expectedError, "ERROR: Thông báo lỗi không khớp hoặc không hiển thị!");
     }
-    @Test()
+    @Test
     public void BR_F003() {
-
+        SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
 
+        sidebarPage.gotoReaders();
+
+        nguoiDungPage nguoiDung = new nguoiDungPage();
+        String maKhongPhaiDocGia = nguoiDung.getNonReaderUserID();
+        sidebarPage.gotoBorrow();
         muonSachPage.clickThemPhieuMuon();
-
-        muonSachPage.enterMaNguoiDung("2");
-
-        muonSachPage.enterMaSachAtRow(0, "MS001-001");
-
-        muonSachPage.clickLuuPhieuMuon();
-
+        muonSachPage.enterMaNguoiDung(maKhongPhaiDocGia);
+        muonSachPage.enterMaSachAtRow(0, "");
         String expectedError = "Người dùng này không thể mượn sách";
         String actualError = muonSachPage.getToastMessage();
+        Assert.assertEquals(actualError, expectedError, "ERROR: Thông báo lỗi không khớp hoặc không hiển thị!");
 
-        Assert.assertEquals(actualError, expectedError, "ERROR: Thông báo lỗi không khớp hoặc không hiển thị đúng!");
+    }
+    @Test
+    public void BR_F004(){
+        SidebarPage sidebarPage = new SidebarPage();
+        quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
+        sidebarPage.gotoReaders();
+        nguoiDungPage nguoiDung = new nguoiDungPage();
+        String maDocGiaTN = nguoiDung.getQualifiedReaderID();
+        sidebarPage.gotoBorrow();
+        muonSachPage.clickThemPhieuMuon();
+        muonSachPage.enterMaNguoiDung(maDocGiaTN);
+        muonSachPage.enterMaSachAtRow(0, "");
+        String expectedError = "Người dùng này không thể mượn sách";
+        String actualError = muonSachPage.getToastMessage();
+        Assert.assertEquals(actualError, expectedError, "ERROR: Thông báo lỗi không khớp hoặc không hiển thị!");
 
-        System.out.println("Kết quả: Hệ thống đã chặn chính xác người dùng không phải Độc giả.");
+    }
+    @Test
+    public void BR_F005(){
+        SidebarPage sidebarPage = new SidebarPage();
+        quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
+        sidebarPage.gotoReaders();
+        nguoiDungPage nguoiDung = new nguoiDungPage();
+        String maDocGiaHopLe = nguoiDung.getUnqualifiedReaderID();
+        sidebarPage.gotoBorrow();
+
+        muonSachPage.clickThemPhieuMuon();
+        muonSachPage.enterMaNguoiDung(maDocGiaHopLe);
+        muonSachPage.MaSach("MS 0");
+        muonSachPage.clickLuuPhieuMuon();
+
+        String expected = "Không tìm thấy sách";
+        Assert.assertEquals(muonSachPage.getToastMessage(), expected);
     }
 
     @AfterMethod
