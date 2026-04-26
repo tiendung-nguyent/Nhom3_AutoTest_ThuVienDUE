@@ -1,4 +1,4 @@
-package testcases;
+package testcases.quanLyMuonSach;
 
 import common.Constant;
 import org.openqa.selenium.chrome.ChromeDriver; // Thêm import này
@@ -10,7 +10,7 @@ import pageobjects.HomePage;
 import pageobjects.LoginPage;
 import pageobjects.quanLyMuonSachPage;
 
-public class quanLyMuonSach {
+public class themPhieuMuon {
 
     @BeforeMethod
     public void setupLogin() {
@@ -45,7 +45,41 @@ public class quanLyMuonSach {
         muonSachPage.clickLuuPhieuMuon();
 
         String expected = "Thêm thông tin mượn sách thành công";
-        Assert.assertEquals(muonSachPage.getSuccessMessage(), expected);
+        Assert.assertEquals(muonSachPage.getToastMessage(), expected);
+    }
+    @Test()
+    public void BR_F002() {
+
+        quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
+
+        muonSachPage.clickThemPhieuMuon();
+        // 2. Nhập mã người dùng không tồn tại (như trong ảnh bạn nhập là "3")
+        muonSachPage.enterMaNguoiDung("3");
+        muonSachPage.enterMaSachAtRow(0, "");
+        // 5. Kiểm chứng thông báo lỗi
+        String expectedError = "Không tìm thấy người dùng";
+        String actualError = muonSachPage.getToastMessage();
+        Assert.assertEquals(actualError, expectedError, "ERROR: Thông báo lỗi không khớp hoặc không hiển thị!");
+    }
+    @Test()
+    public void BR_F003() {
+
+        quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
+
+        muonSachPage.clickThemPhieuMuon();
+
+        muonSachPage.enterMaNguoiDung("2");
+
+        muonSachPage.enterMaSachAtRow(0, "MS001-001");
+
+        muonSachPage.clickLuuPhieuMuon();
+
+        String expectedError = "Người dùng này không thể mượn sách";
+        String actualError = muonSachPage.getToastMessage();
+
+        Assert.assertEquals(actualError, expectedError, "ERROR: Thông báo lỗi không khớp hoặc không hiển thị đúng!");
+
+        System.out.println("Kết quả: Hệ thống đã chặn chính xác người dùng không phải Độc giả.");
     }
 
     @AfterMethod

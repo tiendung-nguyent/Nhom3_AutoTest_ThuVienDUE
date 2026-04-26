@@ -73,40 +73,31 @@ public class quanLyMuonSachPage extends GeneralPage {
         if (index < inputs.size()) {
             WebElement input = inputs.get(index);
 
-            // 1. Cuộn tới ô nhập sách
+            // 1. Cuộn tới ô nhập
             ((org.openqa.selenium.JavascriptExecutor) Constant.WEBDRIVER)
                     .executeScript("arguments[0].scrollIntoView({block: 'center'});", input);
 
-            // 2. Nhập mã sách vào ô text
+            // 2. Nhập mã sách
             input.clear();
             input.sendKeys(maSach);
 
-            // 3. Đợi và chọn chính xác mã sách từ danh sách gợi ý hiện ra
+            // 3. ĐỢI danh sách gợi ý hiện ra và CLICK chọn
             try {
-                // Đợi 1 chút để JS render danh sách gợi ý (Toast/Suggestion thường chậm hơn code)
+                // Đợi 1 giây để JavaScript load danh sách gợi ý
                 Thread.sleep(1000);
 
-                // Lấy danh sách các item gợi ý đang hiển thị trên màn hình
-                List<WebElement> suggestions = Constant.WEBDRIVER.findElements(suggestionItems);
+                // Tìm tất cả các item gợi ý (locator .suggestion-item bạn đã inspect thấy)
+                List<WebElement> suggestions = Constant.WEBDRIVER.findElements(By.cssSelector(".suggestion-item"));
 
-                for (WebElement item : suggestions) {
-                    // Lấy thuộc tính data-code từ HTML bạn gửi để so sánh
-                    String dataCode = item.getAttribute("data-code");
-
-                    if (dataCode != null && dataCode.equals(maSach)) {
-                        item.click(); // Click để chọn đúng cuốn sách
-                        System.out.println("Đã chọn sách: " + maSach);
-                        return; // Thoát hàm sau khi chọn xong
-                    }
-                }
-
-                // Nếu chạy hết vòng lặp mà không thấy mã khớp, click đại cái đầu tiên (phương án dự phòng)
                 if (!suggestions.isEmpty()) {
+                    // Click vào cái đầu tiên hiện ra (thường là cái đúng nhất)
                     suggestions.get(0).click();
+                    System.out.println("Đã click chọn sách từ gợi ý.");
+                } else {
+                    System.out.println("Cảnh báo: Không thấy danh sách gợi ý hiện ra!");
                 }
-
-            } catch (Exception e) {
-                System.out.println("Lỗi khi chọn sách từ danh sách gợi ý: " + e.getMessage());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -121,20 +112,14 @@ public class quanLyMuonSachPage extends GeneralPage {
     /**
      * Lấy thông báo thành công
      */
-    public String getSuccessMessage() {
-        // 1. Tạo bộ đợi trong tối đa 10 giây
-        WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
-
+    public String getToastMessage() {
+        // Đợi tối đa 5 giây để thông báo (bất kể xanh hay đỏ) xuất hiện
+        WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(5));
         try {
-            // 2. Đợi cho đến khi phần tử xuất hiện trong DOM và hiển thị trên màn hình
-            WebElement toast = wait.until(ExpectedConditions.visibilityOfElementLocated(lblSuccessMsg));
-
-            // 3. Cuộn tới nó (nếu cần)
-            this.scrollToElement(lblSuccessMsg);
-
+            WebElement toast = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".toast-message")));
             return toast.getText();
         } catch (Exception e) {
-            return "Không tìm thấy thông báo thành công sau 10 giây!";
+            return "Không có thông báo nào xuất hiện!";
         }
     }
 }
