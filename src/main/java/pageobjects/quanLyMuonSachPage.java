@@ -279,4 +279,63 @@ public class quanLyMuonSachPage extends GeneralPage {
             System.out.println("Lỗi nhập ngày: " + e.getMessage());
         }
     }
+
+    public String clickXoaPhieuMuonDaTra() {
+        System.out.println("Đang tìm phiếu mượn có trạng thái 'Đã trả'...");
+
+        // Đợi bảng load xong
+        WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.id("borrowTableBody")));
+
+        // Lấy danh sách tất cả các dòng (tr) trong bảng
+        List<WebElement> rows = Constant.WEBDRIVER.findElements(By.cssSelector("#borrowTableBody tr"));
+
+        for (WebElement row : rows) {
+            // Tìm thẻ span chứa trạng thái trong dòng hiện tại
+            List<WebElement> badges = row.findElements(By.xpath(".//span[contains(text(), 'Đã trả')]"));
+
+            // Nếu dòng này có chữ "Đã trả"
+            if (!badges.isEmpty()) {
+                // Lấy mã phiếu (thuộc tính data-id của thẻ tr) để lát nữa Assert
+                String maPhieu = row.getAttribute("data-id");
+                System.out.println("Đã tìm thấy phiếu mượn 'Đã trả': " + maPhieu);
+
+                // Tìm nút Xóa (class btn-del) nằm TRONG CHÍNH DÒNG NÀY và click
+                WebElement btnXoa = row.findElement(By.cssSelector(".btn-del"));
+                ((org.openqa.selenium.JavascriptExecutor) Constant.WEBDRIVER).executeScript("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", btnXoa);                btnXoa.click();
+
+                System.out.println("Đã click nút icon Xóa.");
+                return maPhieu; // Trả về mã phiếu để viết Test Case
+            }
+        }
+
+        // Nếu duyệt hết bảng mà không thấy
+        throw new RuntimeException("LỖI: Không tìm thấy phiếu mượn nào có trạng thái 'Đã trả' để xóa!");
+    }
+    public void clickDongYPopupXoa() {
+        try {
+            System.out.println("Đang đợi popup xác nhận xóa xuất hiện...");
+            // Chỉ định thẳng vào ID của modal xóa và lấy nút Đồng ý (btn-danger)
+            By btnDongYLocator = By.cssSelector("#popup-delete-confirm .btn-danger");
+
+            WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(5));
+            WebElement btnDongY = wait.until(ExpectedConditions.elementToBeClickable(btnDongYLocator));
+
+            btnDongY.click();
+            System.out.println("Đã click nút Đồng ý xóa.");
+
+            // Nghỉ 1 giây để web gọi API xóa và hiển thị thông báo
+            Thread.sleep(1000);
+        } catch (Exception e) {
+            System.out.println("Lỗi khi click Đồng ý xóa: " + e.getMessage());
+        }
+    }
+    public boolean isPhieuMuonTonTai(String maPhieu) {
+        // Thử tìm thẻ tr có chứa data-id bằng với mã phiếu vừa xóa
+        List<WebElement> checkExist = Constant.WEBDRIVER.findElements(By.cssSelector("#borrowTableBody tr[data-id='" + maPhieu + "']"));
+
+        // Nếu danh sách rỗng (size = 0) nghĩa là không tìm thấy -> Đã bị xóa (Trả về false)
+        // Nếu size > 0 nghĩa là vẫn còn -> Trả về true
+        return !checkExist.isEmpty();
+    }
 }
