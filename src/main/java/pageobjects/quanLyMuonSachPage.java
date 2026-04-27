@@ -13,8 +13,8 @@ import java.time.format.DateTimeFormatter;
 public class quanLyMuonSachPage extends GeneralPage {
 
     private final By btnThemPhieuMuon = By.id("addBorrowBtn");
-    private final By txtTimKiem = By.id("borrowSearchInput");
-    private final By btnTimKiem = By.id("borrowSearchBtn");
+    private final By txtSearch = By.id("borrowSearchInput");
+    private final By btnSearch = By.id("borrowSearchBtn");
 
     private final By txtMaNguoiDung = By.id("addUserId");
     private final By btnThemDongMoi = By.cssSelector("button.btn-add-dashed");
@@ -57,7 +57,51 @@ public class quanLyMuonSachPage extends GeneralPage {
         this.getBtnThemDongMoi().click();
     }
 
+    public void enterNgayMuonTrongQuaKhu() {
+        try {
+            System.out.println("Đang tính toán và nhập ngày mượn trong quá khứ (trước 3 tháng)...");
 
+            // 1. Tính toán ngày: Lấy ngày hiện tại trừ đi 3 tháng
+            LocalDate ngayHienTai = LocalDate.now();
+            LocalDate ngayTrongQuaKhu = ngayHienTai.minusMonths(3);
+
+            // 2. Định dạng chuẩn theo kiểu gõ phím của Chrome (MMddyyyy)
+            String strNgayMuon = ngayTrongQuaKhu.format(DateTimeFormatter.ofPattern("MMddyyyy"));
+
+            // 3. Tìm ô nhập ngày mượn dựa vào ảnh Dung cung cấp
+            By txtNgayMuon = By.id("addBorrowDate");
+            WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(5));
+            WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(txtNgayMuon));
+
+            // Cuộn màn hình tới ô nhập
+            new org.openqa.selenium.interactions.Actions(Constant.WEBDRIVER)
+                    .scrollToElement(input)
+                    .perform();
+
+            // 4. KỸ THUẬT XÓA SẠCH VÀ GÕ PHÍM
+            org.openqa.selenium.JavascriptExecutor js = (org.openqa.selenium.JavascriptExecutor) Constant.WEBDRIVER;
+            js.executeScript("arguments[0].value = '';", input); // Quét sạch dữ liệu rác (nếu có)
+
+            input.click();
+
+            // Bấm mũi tên trái 3 lần để ép con trỏ nhảy về ô Tháng (mm) ngoài cùng
+            input.sendKeys(org.openqa.selenium.Keys.ARROW_LEFT);
+            input.sendKeys(org.openqa.selenium.Keys.ARROW_LEFT);
+            input.sendKeys(org.openqa.selenium.Keys.ARROW_LEFT);
+
+            // Bây giờ mới gõ chuỗi MMddyyyy vào
+            input.sendKeys(strNgayMuon);
+
+            // Gửi phím TAB để web chốt dữ liệu
+            input.sendKeys(org.openqa.selenium.Keys.TAB);
+
+            System.out.println("Đã nhập ngày mượn: " + strNgayMuon + " (Thực tế là: " + ngayTrongQuaKhu.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ")");
+
+            Thread.sleep(500);
+        } catch (Exception e) {
+            System.out.println("Lỗi nhập ngày mượn trong quá khứ: " + e.getMessage());
+        }
+    }
     public void MaSach(String maSach) {
         List<WebElement> inputs = Constant.WEBDRIVER.findElements(txtListMaSach);
 
@@ -72,6 +116,7 @@ public class quanLyMuonSachPage extends GeneralPage {
 
         }
     }
+
     public void enterMaSachAtRow(int index, String maSach) {
         List<WebElement> inputs = Constant.WEBDRIVER.findElements(txtListMaSach);
         if (index < inputs.size()) {
@@ -280,42 +325,10 @@ public class quanLyMuonSachPage extends GeneralPage {
         }
     }
 
-    public String clickXoaPhieuMuonDaTra() {
-        System.out.println("Đang tìm phiếu mượn có trạng thái 'Đã trả'...");
 
-        // Đợi bảng load xong
-        WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
-        wait.until(ExpectedConditions.presenceOfElementLocated(By.id("borrowTableBody")));
-
-        // Lấy danh sách tất cả các dòng (tr) trong bảng
-        List<WebElement> rows = Constant.WEBDRIVER.findElements(By.cssSelector("#borrowTableBody tr"));
-
-        for (WebElement row : rows) {
-            // Tìm thẻ span chứa trạng thái trong dòng hiện tại
-            List<WebElement> badges = row.findElements(By.xpath(".//span[contains(text(), 'Đã trả')]"));
-
-            // Nếu dòng này có chữ "Đã trả"
-            if (!badges.isEmpty()) {
-                // Lấy mã phiếu (thuộc tính data-id của thẻ tr) để lát nữa Assert
-                String maPhieu = row.getAttribute("data-id");
-                System.out.println("Đã tìm thấy phiếu mượn 'Đã trả': " + maPhieu);
-
-                // Tìm nút Xóa (class btn-del) nằm TRONG CHÍNH DÒNG NÀY và click
-                WebElement btnXoa = row.findElement(By.cssSelector(".btn-del"));
-                ((org.openqa.selenium.JavascriptExecutor) Constant.WEBDRIVER).executeScript("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", btnXoa);                btnXoa.click();
-
-                System.out.println("Đã click nút icon Xóa.");
-                return maPhieu; // Trả về mã phiếu để viết Test Case
-            }
-        }
-
-        // Nếu duyệt hết bảng mà không thấy
-        throw new RuntimeException("LỖI: Không tìm thấy phiếu mượn nào có trạng thái 'Đã trả' để xóa!");
-    }
     public void clickDongYPopupXoa() {
         try {
             System.out.println("Đang đợi popup xác nhận xóa xuất hiện...");
-            // Chỉ định thẳng vào ID của modal xóa và lấy nút Đồng ý (btn-danger)
             By btnDongYLocator = By.cssSelector("#popup-delete-confirm .btn-danger");
 
             WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(5));
@@ -324,18 +337,178 @@ public class quanLyMuonSachPage extends GeneralPage {
             btnDongY.click();
             System.out.println("Đã click nút Đồng ý xóa.");
 
-            // Nghỉ 1 giây để web gọi API xóa và hiển thị thông báo
             Thread.sleep(1000);
         } catch (Exception e) {
             System.out.println("Lỗi khi click Đồng ý xóa: " + e.getMessage());
         }
     }
     public boolean isPhieuMuonTonTai(String maPhieu) {
-        // Thử tìm thẻ tr có chứa data-id bằng với mã phiếu vừa xóa
         List<WebElement> checkExist = Constant.WEBDRIVER.findElements(By.cssSelector("#borrowTableBody tr[data-id='" + maPhieu + "']"));
 
-        // Nếu danh sách rỗng (size = 0) nghĩa là không tìm thấy -> Đã bị xóa (Trả về false)
-        // Nếu size > 0 nghĩa là vẫn còn -> Trả về true
+
         return !checkExist.isEmpty();
     }
+    public String clickXoaPhieuMuonDauTien() {
+        System.out.println("Đang tìm nút icon Xóa ở dòng đầu tiên...");
+
+        By firstRowLocator = By.cssSelector("#borrowTableBody tr:first-child");
+        WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+        WebElement firstRow = wait.until(ExpectedConditions.visibilityOfElementLocated(firstRowLocator));
+
+        String maPhieu = firstRow.getAttribute("data-id");
+
+        WebElement btnXoa = firstRow.findElement(By.cssSelector(".btn-del"));
+        new org.openqa.selenium.interactions.Actions(Constant.WEBDRIVER)
+                .scrollToElement(btnXoa)
+                .perform();
+
+        btnXoa.click();
+        System.out.println("Đã click nút Xóa của phiếu: " + maPhieu);
+
+        return maPhieu;
+    }
+    public String getNoiDungPopupXoa() {
+        System.out.println("Đang đọc nội dung tiêu đề trên hộp thoại xác nhận xóa...");
+
+        By titleLocator = By.cssSelector("#popup-delete-confirm .del-title");
+
+        WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(5));
+        WebElement titleElement = wait.until(ExpectedConditions.visibilityOfElementLocated(titleLocator));
+
+        return titleElement.getText().trim();
+    }
+    public void clickHuyPopupXoa() {
+        try {
+            System.out.println("Đang tìm nút Hủy trên modal popup-delete-confirm...");
+
+            By btnHuyLocator = By.cssSelector("#popup-delete-confirm .btn-cancel");
+
+            WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(5));
+            WebElement btnHuy = wait.until(ExpectedConditions.elementToBeClickable(btnHuyLocator));
+
+            btnHuy.click();
+            System.out.println("Đã click nút Hủy xóa.");
+
+            Thread.sleep(500);
+        } catch (Exception e) {
+            System.out.println("Lỗi khi click Hủy xóa: " + e.getMessage());
+        }
+    }
+    public boolean isPopupXoaClosed() {
+        try {
+            WebElement popup = Constant.WEBDRIVER.findElement(By.id("popup-delete-confirm"));
+            return !popup.isDisplayed();
+        } catch (org.openqa.selenium.NoSuchElementException e) {
+            return true;
+        }
+    }
+
+    public String clickXoaPhieuMuonTheoTrangThai(String trangThai) {
+        System.out.println("Đang đợi dữ liệu ổn định và quét tìm phiếu mượn có trạng thái: '" + trangThai + "'...");
+
+        try { Thread.sleep(1500); } catch (Exception e) {}
+
+        By rowLocator = By.xpath("//tbody[@id='borrowTableBody']//tr[td[6]//span[contains(normalize-space(.), '" + trangThai + "')]]");
+
+        int maxRetries = 3;
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+                WebElement row = wait.until(ExpectedConditions.presenceOfElementLocated(rowLocator));
+
+                String maPhieu = row.getAttribute("data-id");
+                System.out.println("Đã tìm thấy phiếu mượn '" + trangThai + "': " + maPhieu);
+
+                WebElement btnXoa = row.findElement(By.cssSelector(".btn-del"));
+
+                new org.openqa.selenium.interactions.Actions(Constant.WEBDRIVER)
+                        .scrollToElement(btnXoa)
+                        .perform();
+
+                btnXoa.click();
+                System.out.println("Đã click nút icon Xóa thành công.");
+
+                return maPhieu;
+
+            } catch (org.openqa.selenium.StaleElementReferenceException e) {
+                // Nếu bị lỗi Stale, in ra thông báo và vòng lặp sẽ tự chạy lại
+                System.out.println("Giao diện vừa bị load lại (StaleElement), đang thử bắt lại phần tử lần " + (i + 2) + "...");
+                try { Thread.sleep(1000); } catch (Exception ex) {}
+            } catch (org.openqa.selenium.TimeoutException e) {
+                throw new RuntimeException("LỖI: Chờ 10 giây nhưng không thấy phiếu mượn nào mang trạng thái '" + trangThai + "'!");
+            }
+        }
+
+        throw new RuntimeException("LỖI: Giao diện web tải lại liên tục hoặc mạng quá lag, không thể click được nút Xóa!");
+    }
+    public void nhapTuKhoaTimKiem(String tuKhoa) {
+
+        WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(5));
+        WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(txtSearch));
+
+        input.clear();
+        input.sendKeys(tuKhoa);
+    }
+    public void clickNutTimKiem() {
+
+        Constant.WEBDRIVER.findElement(btnSearch).click();
+
+        try { Thread.sleep(1500); } catch (Exception e) {}
+    }
+    public String getMaPhieuMuonDauTien() {
+        By maPhieuLocator = By.cssSelector("#borrowTableBody tr:first-child td:nth-child(1)");
+
+        try {
+            WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(5));
+            WebElement cell = wait.until(ExpectedConditions.visibilityOfElementLocated(maPhieuLocator));
+            return cell.getText().trim();
+        } catch (Exception e) {
+            throw new RuntimeException("LỖI: Bảng kết quả tìm kiếm đang trống!");
+        }
+    }
+
+    public String getMaNguoiDungDauTien() {
+        By maNDLocator = By.cssSelector("#borrowTableBody tr:first-child td:nth-child(2)");
+
+        try {
+            WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(5));
+            WebElement cell = wait.until(ExpectedConditions.visibilityOfElementLocated(maNDLocator));
+            return cell.getText().trim();
+        } catch (Exception e) {
+            throw new RuntimeException("LỖI: Không lấy được Mã người dùng để test!");
+        }
+    }
+
+
+    public boolean checkTatCaDongKhopMaNguoiDung(String maMongMuon) {
+        List<WebElement> rows = Constant.WEBDRIVER.findElements(By.cssSelector("#borrowTableBody tr"));
+
+        if (rows.isEmpty()) return false;
+
+        for (WebElement row : rows) {
+            String maThucTe = row.findElement(By.xpath("./td[2]")).getText().trim();
+            if (!maThucTe.equals(maMongMuon)) {
+                System.out.println("LỖI: Tìm thấy mã " + maThucTe + " không khớp với " + maMongMuon);
+                return false;
+            }
+        }
+        return true;
+    }
+    public void clearOInputSearch() {
+        System.out.println("Đang xóa trống ô tìm kiếm để tải lại danh sách...");
+        By txtSearch = By.id("borrowSearchInput");
+        WebElement input = Constant.WEBDRIVER.findElement(txtSearch);
+
+        input.clear();
+
+        input.sendKeys(org.openqa.selenium.Keys.CONTROL + "a");
+        input.sendKeys(org.openqa.selenium.Keys.BACK_SPACE);
+    }
+    public int getSoLuongDongHienTai() {
+        List<WebElement> rows = Constant.WEBDRIVER.findElements(By.cssSelector("#borrowTableBody tr"));
+        int count = rows.size();
+        System.out.println("Số lượng dòng hiện có trong bảng: " + count);
+        return count;
+    }
+
 }
