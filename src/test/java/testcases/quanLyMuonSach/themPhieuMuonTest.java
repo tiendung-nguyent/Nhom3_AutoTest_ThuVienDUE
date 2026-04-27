@@ -16,31 +16,25 @@ public class themPhieuMuonTest {
 
     @BeforeMethod
     public void setupLogin() {
-        System.out.println("== Setup Login ==");
-
-        // ĐÂY LÀ ĐOẠN QUAN TRỌNG NHẤT ĐỂ SỬA LỖI NULL
         if (Constant.WEBDRIVER == null) {
-            // Nếu bạn dùng Selenium 4.x đời mới, nó sẽ tự quản lý driver
             Constant.WEBDRIVER = new ChromeDriver();
             Constant.WEBDRIVER.manage().window().maximize();
         }
-
-        // 1. Dùng HomePage để mở trang
         HomePage homePage = new HomePage();
         homePage.open();
-
-        // 2. Từ HomePage đi đến LoginPage và đăng nhập
         LoginPage loginPage = homePage.gotoLoginPage();
         loginPage.login(Constant.USERNAME, Constant.PASSWORD);
-
-
+        org.openqa.selenium.support.ui.WebDriverWait wait = new org.openqa.selenium.support.ui.WebDriverWait(Constant.WEBDRIVER, java.time.Duration.ofSeconds(10));
+        wait.until(org.openqa.selenium.support.ui.ExpectedConditions.urlContains("dashboard"));
+        SidebarPage sidebarPage = new SidebarPage();
+        sidebarPage.gotoBorrow();
     }
 
     @Test()
     public void BR_F001() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
-        sidebarPage.gotoReaders();
+        sidebarPage.gotoUsers();
         nguoiDungPage nguoiDung = new nguoiDungPage();
         String maDocGiaHopLe = nguoiDung.getUnqualifiedReaderID();
         sidebarPage.gotoBorrow();
@@ -72,7 +66,7 @@ public class themPhieuMuonTest {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
 
-        sidebarPage.gotoReaders();
+        sidebarPage.gotoUsers();
 
         nguoiDungPage nguoiDung = new nguoiDungPage();
         String maKhongPhaiDocGia = nguoiDung.getNonReaderUserID();
@@ -89,7 +83,7 @@ public class themPhieuMuonTest {
     public void BR_F004(){
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
-        sidebarPage.gotoReaders();
+        sidebarPage.gotoUsers();
         nguoiDungPage nguoiDung = new nguoiDungPage();
         String maDocGiaTN = nguoiDung.getQualifiedReaderID();
         sidebarPage.gotoBorrow();
@@ -105,7 +99,7 @@ public class themPhieuMuonTest {
     public void BR_F005(){
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
-        sidebarPage.gotoReaders();
+        sidebarPage.gotoUsers();
         nguoiDungPage nguoiDung = new nguoiDungPage();
         String maDocGiaHopLe = nguoiDung.getUnqualifiedReaderID();
         sidebarPage.gotoBorrow();

@@ -7,12 +7,12 @@ import common.Constant;
 public class SidebarPage {
 
     // --- Locators ---
-    private final By menuTongQuan = By.xpath("//aside[@class='sidebar']//a[@href='/tong-quan/']");
-    private final By menuBorrow = By.xpath("//aside[@class='sidebar']//a[@href='/borrow/']");
-    private final By menuReturn = By.xpath("//aside[@class='sidebar']//a[@href='/return/']");
+    private final By menuTongQuan = By.xpath("//aside[@class='sidebar']//a[@href='/dashboard/']");
+    private final By menuBorrow = By.xpath("//aside[@class='sidebar']//a[@href='/borrow-books/']");
+    private final By menuReturn = By.xpath("//aside[@class='sidebar']//a[@href='/return-books/']");
     private final By menuBooks = By.xpath("//aside[@class='sidebar']//a[@href='/books/']");
-    private final By menuReaders = By.xpath("//aside[@class='sidebar']//a[@href='/readers/']");
-    private final By menuReports = By.xpath("//aside[@class='sidebar']//a[@href='/reports/statistics/']");
+    private final By menuUsers = By.xpath("//aside[@class='sidebar']//a[@href='/users/']");
+    private final By menuReports = By.xpath("//aside[@class='sidebar']//a[@href='/reports/']");
 
     // --- Elements ---
     public WebElement getMenuTongQuan() {
@@ -31,8 +31,8 @@ public class SidebarPage {
         return Constant.WEBDRIVER.findElement(menuBooks);
     }
 
-    public WebElement getMenuReaders() {
-        return Constant.WEBDRIVER.findElement(menuReaders);
+    public WebElement getMenuUsers() {
+        return Constant.WEBDRIVER.findElement(menuUsers);
     }
 
     public WebElement getMenuReports() {
@@ -57,8 +57,8 @@ public class SidebarPage {
         this.getMenuBooks().click();
     }
 
-    public void gotoReaders() {
-        this.getMenuReaders().click();
+    public void gotoUsers() {
+        this.getMenuUsers().click();
     }
 
     public void gotoReports() {
