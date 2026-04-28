@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
  * Page Object cho phần Quản lý trả sách.
- * Đảm nhiệm các thao tác xác nhận trả, chọn tình trạng, mức độ hư hỏng, mô tả, và thanh toán phí phạt.
+ * Đảm nhiệm các thao tác xác nhận trả sách và thanh toán phí phạt.
  */
 public class quanLyTraSachPage extends GeneralPage {
 
@@ -42,9 +42,17 @@ public class quanLyTraSachPage extends GeneralPage {
 
     private final By tabThanhToanPhiPhat = By.xpath("//button[contains(@onclick, 'tab-2')]");
     private final By rowPhiPhat = By.cssSelector("#tab-2 tbody tr");
+
+    /*
+     * Bảng Thanh toán phí phạt hiện tại:
+     * Cột 1: Mã phạt
+     * Cột 2: Người dùng
+     * Cột 3: Mã người dùng
+     * Cột 4: Tổng tiền phạt chưa thanh toán
+     * Cột 5: Nút Thanh toán nếu còn nợ
+     */
     private final By tenNguoiDung = By.cssSelector("td:nth-child(2)");
-    private final By tongTien = By.cssSelector("td:nth-child(5) span");
-    private final By btnXemChiTietPhiPhat = By.cssSelector("button[onclick*='openPaymentPopup']");
+    private final By tongTien = By.cssSelector("td:nth-child(4)");
 
     private final By popupChiTietPhiPhat = By.id("popup-payment");
     private final By popupTenNguoiDung = By.id("payUserName");
@@ -56,10 +64,10 @@ public class quanLyTraSachPage extends GeneralPage {
     private final By errorPhuongThucThanhToan = By.cssSelector(".error-phuongthuc-thanhtoan");
 
     private final By btnClosePopupChiTietPhiPhat =
-            By.xpath("//div[@id='popup-payment']//button[contains(@onclick, 'none') and contains(text(), '×')]");
+            By.xpath("//div[@id='popup-payment']//button[contains(text(), '×') or contains(text(), 'Đóng')]");
 
     private final By btnHuyThanhToan =
-            By.xpath("//div[@id='popup-payment']//button[text()='Hủy']");
+            By.xpath("//div[@id='popup-payment']//button[normalize-space()='Hủy']");
 
     private final By popupXacNhanHuyThanhToan = By.id("popup-xacnhan-huy-thanhtoan");
     private final By btnXacNhanHuyThanhToan = By.id("btn-xacnhan-huy-thanhtoan-xacnhan");
@@ -115,11 +123,14 @@ public class quanLyTraSachPage extends GeneralPage {
 
     public void clickXacNhanTra(WebElement row) {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+
         WebElement button = wait.until(ExpectedConditions.elementToBeClickable(
                 row.findElement(btnXacNhanTra)
         ));
+
         ((JavascriptExecutor) Constant.WEBDRIVER)
                 .executeScript("arguments[0].scrollIntoView({block: 'center'});", button);
+
         try {
             button.click();
         } catch (Exception e) {
@@ -130,47 +141,60 @@ public class quanLyTraSachPage extends GeneralPage {
 
     public void chonTinhTrangTot() {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+
         WebElement radio = wait.until(ExpectedConditions.presenceOfElementLocated(radioTot));
+
         ((JavascriptExecutor) Constant.WEBDRIVER)
                 .executeScript("arguments[0].scrollIntoView({block: 'center'});", radio);
+
         try {
             wait.until(ExpectedConditions.elementToBeClickable(radioTot)).click();
         } catch (Exception e) {
             ((JavascriptExecutor) Constant.WEBDRIVER)
                     .executeScript("arguments[0].click();", radio);
         }
+
         wait.until(driver -> radio.isSelected());
     }
 
     public void chonTinhTrangHuHong() {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+
         WebElement radio = wait.until(ExpectedConditions.presenceOfElementLocated(radioHuHong));
+
         ((JavascriptExecutor) Constant.WEBDRIVER)
                 .executeScript("arguments[0].scrollIntoView({block: 'center'});", radio);
+
         try {
             wait.until(ExpectedConditions.elementToBeClickable(radioHuHong)).click();
         } catch (Exception e) {
             ((JavascriptExecutor) Constant.WEBDRIVER)
                     .executeScript("arguments[0].click();", radio);
         }
+
         wait.until(driver -> radio.isSelected());
-        // Đảm bảo trường mức độ hư hỏng đã xuất hiện
+
         wait.until(ExpectedConditions.presenceOfElementLocated(
                 By.xpath("//input[@name='damageLevel']")
         ));
     }
 
     /**
-     * Chọn mức độ hư hỏng (radio button).
+     * Chọn mức độ hư hỏng.
+     *
      * @param mucDoId Giá trị: "1" = Nhẹ, "2" = Vừa, "3" = Nặng
      */
     public void nhapMucDoHuHong(String mucDoId) {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+
         By radioInput = By.xpath("//input[@name='damageLevel' and @value='" + mucDoId + "']");
         By radioLabel = By.xpath("//input[@name='damageLevel' and @value='" + mucDoId + "']/ancestor::label[1]");
+
         WebElement input = wait.until(ExpectedConditions.presenceOfElementLocated(radioInput));
+
         ((JavascriptExecutor) Constant.WEBDRIVER)
                 .executeScript("arguments[0].scrollIntoView({block: 'center'});", input);
+
         try {
             WebElement label = wait.until(ExpectedConditions.elementToBeClickable(radioLabel));
             label.click();
@@ -178,20 +202,22 @@ public class quanLyTraSachPage extends GeneralPage {
             ((JavascriptExecutor) Constant.WEBDRIVER)
                     .executeScript("arguments[0].click();", input);
         }
+
         wait.until(driver -> input.isSelected());
+
         if (!input.isSelected()) {
             throw new AssertionError("Không chọn được mức độ hư hỏng có value = " + mucDoId);
         }
     }
 
-    /**
-     * Nhập mô tả tình trạng hư hỏng.
-     */
     public void nhapMoTaHuHong(String moTa) {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+
         WebElement input = wait.until(ExpectedConditions.visibilityOfElementLocated(inputMoTaHuHong));
+
         ((JavascriptExecutor) Constant.WEBDRIVER)
                 .executeScript("arguments[0].scrollIntoView({block: 'center'});", input);
+
         input.clear();
         input.sendKeys(moTa);
     }
@@ -236,10 +262,14 @@ public class quanLyTraSachPage extends GeneralPage {
 
     public void openTabThanhToanPhiPhat() {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+
         WebElement tab = wait.until(ExpectedConditions.elementToBeClickable(tabThanhToanPhiPhat));
+
         ((JavascriptExecutor) Constant.WEBDRIVER)
                 .executeScript("arguments[0].scrollIntoView({block: 'center'});", tab);
+
         tab.click();
+
         wait.until(driver ->
                 Constant.WEBDRIVER.getPageSource().contains("Thanh toán phí phạt")
                         || !Constant.WEBDRIVER.findElements(rowPhiPhat).isEmpty()
@@ -280,29 +310,59 @@ public class quanLyTraSachPage extends GeneralPage {
 
     public List<WebElement> getPopupChiTietKhoanPhatWithWait() {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+
         wait.until(ExpectedConditions.visibilityOfElementLocated(popupChiTietPhiPhat));
         wait.until(driver -> !Constant.WEBDRIVER.findElements(popupChiTietKhoanPhat).isEmpty());
+
         return Constant.WEBDRIVER.findElements(popupChiTietKhoanPhat);
     }
 
+    /**
+     * Mở popup chi tiết/thanh toán phí phạt.
+     */
     public void clickXemChiTietPhiPhat(WebElement row) {
-        row.findElement(btnXemChiTietPhiPhat).click();
+        clickXemChiTietPhiPhatWithWait(row);
     }
 
+    /**
+     * Nếu dòng còn nợ có nút Thanh toán thì click nút Thanh toán.
+     * Nếu dòng đã thanh toán hết không có nút thì click trực tiếp vào dòng để xem chi tiết.
+     */
     public void clickXemChiTietPhiPhatWithWait(WebElement row) {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
-        WebElement button = wait.until(ExpectedConditions.elementToBeClickable(
-                row.findElement(btnXemChiTietPhiPhat)
-        ));
+
         ((JavascriptExecutor) Constant.WEBDRIVER)
-                .executeScript("arguments[0].scrollIntoView({block: 'center'});", button);
+                .executeScript("arguments[0].scrollIntoView({block: 'center'});", row);
+
         try {
-            button.click();
+            List<WebElement> buttons = row.findElements(By.tagName("button"));
+
+            if (!buttons.isEmpty()) {
+                WebElement button = buttons.get(buttons.size() - 1);
+
+                try {
+                    wait.until(ExpectedConditions.elementToBeClickable(button)).click();
+                } catch (Exception e) {
+                    ((JavascriptExecutor) Constant.WEBDRIVER)
+                            .executeScript("arguments[0].click();", button);
+                }
+            } else {
+                try {
+                    wait.until(ExpectedConditions.elementToBeClickable(row)).click();
+                } catch (Exception e) {
+                    ((JavascriptExecutor) Constant.WEBDRIVER)
+                            .executeScript("arguments[0].click();", row);
+                }
+            }
+
+            wait.until(ExpectedConditions.visibilityOfElementLocated(popupChiTietPhiPhat));
+
         } catch (Exception e) {
-            ((JavascriptExecutor) Constant.WEBDRIVER)
-                    .executeScript("arguments[0].click();", button);
+            throw new AssertionError(
+                    "Không mở được popup chi tiết/thanh toán phí phạt. Nội dung dòng: " + row.getText(),
+                    e
+            );
         }
-        wait.until(ExpectedConditions.visibilityOfElementLocated(popupChiTietPhiPhat));
     }
 
     public void closePopupChiTietPhiPhat() {
@@ -313,14 +373,101 @@ public class quanLyTraSachPage extends GeneralPage {
 
     public void clickXacNhanThanhToan() {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
-        WebElement button = wait.until(ExpectedConditions.elementToBeClickable(btnXacNhanThanhToan));
-        button.click();
+        // Try several strategies to find the confirm payment button (id, onclick, or visible text)
+        By[] candidates = new By[]{
+                By.id("btnConfirmPayment"),
+                By.xpath("//button[contains(@onclick,'submitPayment')]") ,
+                By.xpath("//div[@id='popup-payment']//button[normalize-space()='Xác nhận']"),
+                By.xpath("//button[contains(normalize-space(.),'Xác nhận')]")
+        };
+
+        Exception lastEx = null;
+        for (By candidate : candidates) {
+            try {
+                List<WebElement> els = Constant.WEBDRIVER.findElements(candidate);
+                if (els.isEmpty()) continue;
+
+                WebElement button = wait.until(ExpectedConditions.elementToBeClickable(candidate));
+                ((JavascriptExecutor) Constant.WEBDRIVER).executeScript("arguments[0].scrollIntoView({block: 'center'});", button);
+                try {
+                    button.click();
+                } catch (Exception e) {
+                    ((JavascriptExecutor) Constant.WEBDRIVER).executeScript("arguments[0].click();", button);
+                }
+
+                // Wait for either success toast OR popup closed OR total updated to 0
+                boolean outcome = wait.until(driver -> {
+                    try {
+                        // toast
+                        List<WebElement> toasts = driver.findElements(toastSuccess);
+                        if (!toasts.isEmpty() && toasts.get(0).isDisplayed()) return true;
+                    } catch (Exception ignored) {}
+
+                    try {
+                        List<WebElement> popups = driver.findElements(popupChiTietPhiPhat);
+                        if (popups.isEmpty()) return true; // closed
+                        try {
+                            if (!popups.get(0).isDisplayed()) return true;
+                        } catch (Exception ignored) {}
+                    } catch (Exception ignored) {}
+
+                    try {
+                        WebElement totalEl = driver.findElement(popupTongTien);
+                        String txt = totalEl.getText();
+                        if (txt != null && txt.trim().matches("^\\D*0\\D*$")) return true;
+                    } catch (Exception ignored) {}
+
+                    return false;
+                });
+
+                if (outcome) return;
+
+            } catch (Exception e) {
+                lastEx = e;
+            }
+        }
+
+        // If none succeeded, throw an informative error
+        throw new AssertionError("Không tìm thấy hoặc không thể click nút Xác nhận thanh toán", lastEx);
     }
 
+    /**
+     * Chọn phương thức thanh toán Tiền mặt (radio theo name/value) một cách an toàn.
+     */
     public void chonPhuongThucThanhToanTienMat() {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
-        WebElement radio = wait.until(ExpectedConditions.elementToBeClickable(radioTienMat));
-        radio.click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("popup-payment")));
+        By radioTienMat = By.cssSelector("input[type='radio'][name='paymentMethodNew'][value='cash']");
+        List<WebElement> radios = Constant.WEBDRIVER.findElements(radioTienMat);
+        if (radios.isEmpty()) {
+            WebElement popup = Constant.WEBDRIVER.findElement(By.id("popup-payment"));
+            System.out.println("DEBUG HTML popup-payment: " + popup.getAttribute("innerHTML"));
+            throw new AssertionError("Không tìm thấy radio button Tiền mặt (name=paymentMethodNew, value=cash) trong popup!");
+        }
+        WebElement input = radios.get(0);
+        ((JavascriptExecutor) Constant.WEBDRIVER).executeScript("arguments[0].scrollIntoView({block: 'center'});", input);
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(input)).click();
+        } catch (Exception e) {
+            try {
+                // fallback: click the label if input click fails
+                WebElement label = input.findElement(By.xpath("ancestor::label[1]"));
+                wait.until(ExpectedConditions.elementToBeClickable(label)).click();
+            } catch (Exception ex) {
+                ((JavascriptExecutor) Constant.WEBDRIVER).executeScript("arguments[0].click();", input);
+            }
+        }
+        // small wait for UI to update selection
+        wait.until(driver -> {
+            try {
+                return input.isSelected();
+            } catch (Exception e) {
+                return false;
+            }
+        });
+        if (!input.isSelected()) {
+            throw new AssertionError("Không chọn được phương thức thanh toán Tiền mặt!");
+        }
     }
 
     public String getErrorPhuongThucThanhToan() {
@@ -328,7 +475,9 @@ public class quanLyTraSachPage extends GeneralPage {
     }
 
     public void clickHuyThanhToan() {
-        Constant.WEBDRIVER.findElement(btnHuyThanhToan).click();
+        WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+        WebElement button = wait.until(ExpectedConditions.elementToBeClickable(btnHuyThanhToan));
+        button.click();
     }
 
     public WebElement getPopupXacNhanHuyThanhToan() {
@@ -336,10 +485,28 @@ public class quanLyTraSachPage extends GeneralPage {
     }
 
     public void xacNhanHuyThanhToan() {
-        Constant.WEBDRIVER.findElement(btnXacNhanHuyThanhToan).click();
+        WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+        WebElement button = wait.until(ExpectedConditions.elementToBeClickable(btnXacNhanHuyThanhToan));
+        button.click();
     }
 
     public boolean isXacNhanThanhToanEnabled() {
-        return Constant.WEBDRIVER.findElement(btnXacNhanThanhToan).isEnabled();
+        try {
+            return Constant.WEBDRIVER.findElement(btnXacNhanThanhToan).isEnabled();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Kiểm tra radio "Tiền mặt" đã được chọn chưa.
+     */
+    public boolean isPhuongThucTienMatSelected() {
+        try {
+            WebElement input = Constant.WEBDRIVER.findElement(By.cssSelector("input[type='radio'][name='paymentMethodNew'][value='cash']"));
+            return input.isSelected();
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

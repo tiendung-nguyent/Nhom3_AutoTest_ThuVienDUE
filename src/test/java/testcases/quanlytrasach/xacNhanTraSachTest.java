@@ -225,15 +225,19 @@ public class XacNhanTraSachTest {
 	}
 
 	private void chonMucDoHuHong(String mucDo) {
-		// Tìm radio theo label chứa tên mức độ hư hỏng
+		wait.until(driver -> !Constant.WEBDRIVER.findElements(By.name("damageLevel")).isEmpty());
+
 		List<WebElement> radios = Constant.WEBDRIVER.findElements(By.name("damageLevel"));
+
 		for (WebElement radio : radios) {
 			WebElement label = radio.findElement(By.xpath("./ancestor::label[1]"));
+
 			if (label.getText().contains(mucDo)) {
 				traSachPage.nhapMucDoHuHong(radio.getAttribute("value"));
 				return;
 			}
 		}
+
 		throw new AssertionError("Không tìm thấy mức độ hư hỏng: " + mucDo);
 	}
 
@@ -410,7 +414,7 @@ public class XacNhanTraSachTest {
 				}
 
 				closePaymentPopupSafely();
-			} catch (Exception ignored) {
+			} catch (Exception e) {
 				closePaymentPopupSafely();
 			}
 		}
