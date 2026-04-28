@@ -39,6 +39,7 @@ public class XacNhanTraSachTest {
 	private static final String TRANG_THAI_PHAT_CHUA_THANH_TOAN = "Chưa thanh toán";
 
 	private static final String MUC_HU_HONG_NHE = "Hư hỏng nhẹ";
+	private static final String MUC_HU_HONG_VUA = "Hư hỏng vừa";
 	private static final String MUC_HU_HONG_NANG = "Hư hỏng nặng";
 
 	@BeforeMethod
@@ -85,36 +86,21 @@ public class XacNhanTraSachTest {
 
 	private void openXacNhanTraTab() {
 		SidebarPage sidebarPage = new SidebarPage();
+
 		sidebarPage.gotoReturn();
 
+		wait.until(ExpectedConditions.elementToBeClickable(traSachPage.getTabXacNhanTra()));
 		traSachPage.getTabXacNhanTra().click();
+
 		waitForReturnRowsOrEmptyPage();
 	}
 
 	private void openTabThanhToanPhiPhat() {
 		SidebarPage sidebarPage = new SidebarPage();
 
-		/*
-		 * Không dùng /quanlyphat vì route này không tồn tại.
-		 * Đi đúng luồng UI: Sidebar Trả sách -> tab Thanh toán phí phạt.
-		 */
 		sidebarPage.gotoReturn();
 
-		WebElement tabThanhToanPhiPhat = wait.until(ExpectedConditions.elementToBeClickable(
-				By.xpath("//*[contains(normalize-space(), 'Thanh toán phí phạt')]")
-		));
-
-		((JavascriptExecutor) Constant.WEBDRIVER)
-				.executeScript("arguments[0].scrollIntoView({block: 'center'});", tabThanhToanPhiPhat);
-
-		tabThanhToanPhiPhat.click();
-
-		wait.until(driver ->
-				Constant.WEBDRIVER.getPageSource().contains("Thanh toán phí phạt")
-						|| Constant.WEBDRIVER.getPageSource().contains("phí phạt")
-						|| Constant.WEBDRIVER.getPageSource().contains("Chưa thanh toán")
-						|| Constant.WEBDRIVER.getPageSource().contains("Đã thanh toán")
-		);
+		traSachPage.openTabThanhToanPhiPhat();
 	}
 
 	private void refreshXacNhanTraTab() {
@@ -196,10 +182,8 @@ public class XacNhanTraSachTest {
 	// =========================
 
 	private void openPopupXacNhanTra(WebElement row) {
-		((JavascriptExecutor) Constant.WEBDRIVER)
-				.executeScript("arguments[0].scrollIntoView({block: 'center'});", row);
-
 		traSachPage.clickXacNhanTra(row);
+
 		wait.until(ExpectedConditions.visibilityOf(traSachPage.getPopupXacNhanTra()));
 	}
 
@@ -241,31 +225,21 @@ public class XacNhanTraSachTest {
 	}
 
 	private void chonMucDoHuHong(String mucDo) {
-		WebElement option = wait.until(ExpectedConditions.elementToBeClickable(
-				By.xpath("//label[contains(normalize-space(), '" + mucDo + "')]")
-		));
-
-		((JavascriptExecutor) Constant.WEBDRIVER)
-				.executeScript("arguments[0].scrollIntoView({block: 'center'});", option);
-
-		try {
-			option.click();
-		} catch (Exception e) {
-			((JavascriptExecutor) Constant.WEBDRIVER)
-					.executeScript("arguments[0].click();", option);
+		// Tìm radio theo label chứa tên mức độ hư hỏng
+		List<WebElement> radios = Constant.WEBDRIVER.findElements(By.name("damageLevel"));
+		for (WebElement radio : radios) {
+			WebElement label = radio.findElement(By.xpath("./ancestor::label[1]"));
+			if (label.getText().contains(mucDo)) {
+				traSachPage.nhapMucDoHuHong(radio.getAttribute("value"));
+				return;
+			}
 		}
+		throw new AssertionError("Không tìm thấy mức độ hư hỏng: " + mucDo);
 	}
 
+
 	private void nhapMoTaHuHong(String moTa) {
-		WebElement textArea = wait.until(ExpectedConditions.visibilityOfElementLocated(
-				By.xpath("//textarea[contains(@placeholder, 'Nhập mô tả tình trạng sách khi trả')]")
-		));
-
-		((JavascriptExecutor) Constant.WEBDRIVER)
-				.executeScript("arguments[0].scrollIntoView({block: 'center'});", textArea);
-
-		textArea.clear();
-		textArea.sendKeys(moTa);
+		traSachPage.nhapMoTaHuHong(moTa);
 	}
 
 	private void waitPopupXacNhanTraDong() {
@@ -406,73 +380,46 @@ public class XacNhanTraSachTest {
 		);
 	}
 
-	/*
-	 * Kiểm tra khoản phạt trong tab Thanh toán phí phạt.
-	 * Cách này không phụ thuộc selector .phat[data-idmuon].
-	 * Nó kiểm tra theo nội dung đang hiển thị trong tab hoặc popup chi tiết.
-	 */
 	private void assertFineCreatedInPaymentTab(String loanId, String loaiPhatExpected) {
 		openTabThanhToanPhiPhat();
 
-		String bodyText = Constant.WEBDRIVER.findElement(By.tagName("body")).getText();
+		List<WebElement> rows = traSachPage.getRowsPhiPhat();
 
-		if (bodyText.contains(loanId)
-				&& bodyText.contains(loaiPhatExpected)
-				&& bodyText.contains(TRANG_THAI_PHAT_CHUA_THANH_TOAN)) {
-			return;
-		}
-
-		List<WebElement> detailButtons = Constant.WEBDRIVER.findElements(
-				By.xpath("//button[contains(normalize-space(), 'Xem') " +
-						"or contains(normalize-space(), 'Chi tiết') " +
-						"or contains(normalize-space(), 'Thanh toán')]")
+		Assert.assertFalse(
+				rows.isEmpty(),
+				"Tab Thanh toán phí phạt phải có dữ liệu sau khi phát sinh khoản phạt"
 		);
 
-		for (int i = 0; i < detailButtons.size(); i++) {
-			detailButtons = Constant.WEBDRIVER.findElements(
-					By.xpath("//button[contains(normalize-space(), 'Xem') " +
-							"or contains(normalize-space(), 'Chi tiết') " +
-							"or contains(normalize-space(), 'Thanh toán')]")
-			);
-
-			if (i >= detailButtons.size()) {
-				break;
-			}
-
-			WebElement button = detailButtons.get(i);
-
-			((JavascriptExecutor) Constant.WEBDRIVER)
-					.executeScript("arguments[0].scrollIntoView({block: 'center'});", button);
-
+		for (WebElement row : rows) {
 			try {
-				button.click();
-			} catch (Exception e) {
-				((JavascriptExecutor) Constant.WEBDRIVER)
-						.executeScript("arguments[0].click();", button);
+				traSachPage.clickXemChiTietPhiPhatWithWait(row);
+
+				List<WebElement> fineRows = traSachPage.getPopupChiTietKhoanPhatWithWait();
+
+				for (WebElement fineRow : fineRows) {
+					String fineText = fineRow.getText();
+
+					boolean isCorrectLoan = fineText.contains(loanId);
+					boolean isCorrectType = fineText.contains(loaiPhatExpected);
+					boolean isUnpaid = fineText.contains(TRANG_THAI_PHAT_CHUA_THANH_TOAN);
+
+					if (isCorrectLoan && isCorrectType && isUnpaid) {
+						closePaymentPopupSafely();
+						return;
+					}
+				}
+
+				closePaymentPopupSafely();
+			} catch (Exception ignored) {
+				closePaymentPopupSafely();
 			}
-
-			wait.until(driver -> Constant.WEBDRIVER.findElement(By.tagName("body")).getText().contains("phạt")
-					|| Constant.WEBDRIVER.findElement(By.tagName("body")).getText().contains("Phạt")
-					|| Constant.WEBDRIVER.findElement(By.tagName("body")).getText().contains("Mã phiếu"));
-
-			String detailText = Constant.WEBDRIVER.findElement(By.tagName("body")).getText();
-
-			if (detailText.contains(loanId)
-					&& detailText.contains(loaiPhatExpected)
-					&& detailText.contains(TRANG_THAI_PHAT_CHUA_THANH_TOAN)) {
-				closeAnyPopupIfVisible();
-				return;
-			}
-
-			closeAnyPopupIfVisible();
 		}
 
 		throw new AssertionError(
 				"Không tìm thấy khoản phạt đã tạo trong tab Thanh toán phí phạt. " +
 						"Loan ID: " + loanId +
-						", Loại phạt cần tìm: " + loaiPhatExpected +
-						", Trạng thái cần có: " + TRANG_THAI_PHAT_CHUA_THANH_TOAN +
-						". Có thể tab Thanh toán phí phạt không hiển thị mã phiếu mượn hoặc selector nút chi tiết chưa đúng."
+						", Loại phạt: " + loaiPhatExpected +
+						", Trạng thái cần có: " + TRANG_THAI_PHAT_CHUA_THANH_TOAN
 		);
 	}
 
@@ -481,20 +428,35 @@ public class XacNhanTraSachTest {
 		assertFineCreatedInPaymentTab(loanId, LOAI_PHAT_HU_HONG);
 	}
 
-	private void closeAnyPopupIfVisible() {
-		List<WebElement> closeButtons = Constant.WEBDRIVER.findElements(
-				By.xpath("//button[contains(normalize-space(), 'Đóng') " +
-						"or contains(normalize-space(), 'Hủy') " +
-						"or contains(normalize-space(), '×') " +
-						"or contains(@class, 'close')]")
-		);
+	private void closePaymentPopupSafely() {
+		try {
+			traSachPage.closePopupChiTietPhiPhat();
 
-		if (!closeButtons.isEmpty()) {
-			try {
-				closeButtons.get(0).click();
-			} catch (Exception e) {
-				((JavascriptExecutor) Constant.WEBDRIVER)
-						.executeScript("arguments[0].click();", closeButtons.get(0));
+			wait.until(driver -> {
+				List<WebElement> popups = Constant.WEBDRIVER.findElements(By.id("popup-payment"));
+
+				if (popups.isEmpty()) {
+					return true;
+				}
+
+				try {
+					return !popups.get(0).isDisplayed();
+				} catch (Exception e) {
+					return true;
+				}
+			});
+		} catch (Exception ignored) {
+			List<WebElement> closeButtons = Constant.WEBDRIVER.findElements(
+					By.xpath("//div[@id='popup-payment']//button[contains(text(), '×') or contains(text(), 'Đóng') or contains(text(), 'Hủy')]")
+			);
+
+			if (!closeButtons.isEmpty()) {
+				try {
+					closeButtons.get(0).click();
+				} catch (Exception e) {
+					((JavascriptExecutor) Constant.WEBDRIVER)
+							.executeScript("arguments[0].click();", closeButtons.get(0));
+				}
 			}
 		}
 	}
