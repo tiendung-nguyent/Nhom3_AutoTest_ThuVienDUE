@@ -11,7 +11,9 @@ import pageobjects.LoginPage;
 import pageobjects.SidebarPage;
 import pageobjects.nguoiDungPage;
 import pageobjects.quanLyMuonSachPage;
+
 public class xoaPhieuMuon {
+
     @BeforeMethod
     public void setupLogin() {
         System.out.println("== Setup Login ==");
@@ -124,7 +126,7 @@ public class xoaPhieuMuon {
     public void BR_X005() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
-        sidebarPage.gotoReaders();
+        sidebarPage.gotoUsers();
         nguoiDungPage nguoiDung = new nguoiDungPage();
         String maDocGiaHopLe = nguoiDung.getUnqualifiedReaderID();
         sidebarPage.gotoBorrow();
