@@ -21,7 +21,7 @@ public class thanhToanPhiPhatTest {
 
     private WebDriverWait wait;
     private quanLyTraSachPage traSachPage;
-    
+
     private static String paidUserNameAfterPayment;
 
     @BeforeMethod
@@ -462,19 +462,26 @@ public class thanhToanPhiPhatTest {
     }
 
     private void assertPaymentMethodErrorDisplayed() {
-        String bodyText = normalizeText(Constant.WEBDRIVER.findElement(By.tagName("body")).getText());
+        WebDriverWait shortWait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(5));
+
+        boolean errorDisplayed = shortWait.until(driver -> {
+            String bodyText = normalizeText(driver.findElement(By.tagName("body")).getText());
+
+            return bodyText.contains("Vui lòng chọn phương thức thanh toán.")
+                    || bodyText.contains("Vui lòng chọn phương thức thanh toán")
+                    || bodyText.contains("chọn phương thức thanh toán");
+        });
 
         Assert.assertTrue(
-                bodyText.contains("Vui lòng chọn phương thức thanh toán.")
-                        || bodyText.contains("chọn phương thức thanh toán"),
-                "Hệ thống phải hiển thị lỗi “Vui lòng chọn phương thức thanh toán.” Nội dung thực tế: " + bodyText
+                errorDisplayed,
+                "Hệ thống phải hiển thị lỗi “Vui lòng chọn phương thức thanh toán.”"
         );
     }
 
     private void assertPaymentSuccessMessageDisplayed() {
         try {
             Assert.assertTrue(
-                    traSachPage.getSuccessMessage().contains("Thanh toán phí phạt thành công"),
+                    traSachPage.getSuccessMessage().contains("Xác nhận thanh toán thành công"),
                     "Hệ thống phải hiển thị thông báo “Thanh toán phí phạt thành công”."
             );
         } catch (Exception e) {
@@ -572,55 +579,6 @@ public class thanhToanPhiPhatTest {
     }
 
     @Test(priority = 4)
-    public void TC_TP_05_huyThanhToanPhiPhat() {
-        WebElement row = findUnpaidFineRow();
-
-        String tenNguoiDung = getTenNguoiDung(row);
-        long tongTienTruocKhiHuy = parseMoney(getTongTien(row));
-
-        openChiTietPhiPhat(row);
-
-        int unpaidBefore = countUnpaidFineRowsInPopup();
-
-        Assert.assertTrue(
-                unpaidBefore > 0,
-                "Tiền điều kiện: người dùng phải có khoản phạt Chưa thanh toán"
-        );
-
-        Assert.assertTrue(
-                tongTienTruocKhiHuy > 0,
-                "Tiền điều kiện: tổng tiền trước khi hủy phải > 0"
-        );
-
-        traSachPage.clickHuyThanhToan();
-
-        waitCancelPaymentPopupDisplayed();
-
-        traSachPage.xacNhanHuyThanhToan();
-
-        waitPaymentPopupClosed();
-
-        refreshThanhToanPhiPhatTab();
-
-        WebElement rowSauKhiHuy = findFineRowByTenNguoiDung(tenNguoiDung);
-        long tongTienSauKhiHuy = parseMoney(getTongTien(rowSauKhiHuy));
-
-        Assert.assertEquals(
-                tongTienSauKhiHuy,
-                tongTienTruocKhiHuy,
-                "Sau khi hủy, tổng tiền phạt phải giữ nguyên"
-        );
-
-        openChiTietPhiPhat(rowSauKhiHuy);
-
-        Assert.assertEquals(
-                countUnpaidFineRowsInPopup(),
-                unpaidBefore,
-                "Sau khi hủy, trạng thái các khoản phạt không được thay đổi"
-        );
-    }
-
-    @Test(priority = 5)
     public void TC_TP_04_thanhToanPhiPhatThanhCong() {
         WebElement row = findUnpaidFineRow();
 
@@ -692,6 +650,55 @@ public class thanhToanPhiPhatTest {
         Assert.assertTrue(
                 isConfirmPaymentDisabledOrHidden(),
                 "Sau khi thanh toán hết, nút Xác nhận thanh toán phải bị ẩn hoặc vô hiệu hóa"
+        );
+    }
+
+    @Test(priority = 5)
+    public void TC_TP_05_huyThanhToanPhiPhat() {
+        WebElement row = findUnpaidFineRow();
+
+        String tenNguoiDung = getTenNguoiDung(row);
+        long tongTienTruocKhiHuy = parseMoney(getTongTien(row));
+
+        openChiTietPhiPhat(row);
+
+        int unpaidBefore = countUnpaidFineRowsInPopup();
+
+        Assert.assertTrue(
+                unpaidBefore > 0,
+                "Tiền điều kiện: người dùng phải có khoản phạt Chưa thanh toán"
+        );
+
+        Assert.assertTrue(
+                tongTienTruocKhiHuy > 0,
+                "Tiền điều kiện: tổng tiền trước khi hủy phải > 0"
+        );
+
+        traSachPage.clickHuyThanhToan();
+
+        waitCancelPaymentPopupDisplayed();
+
+        traSachPage.xacNhanHuyThanhToan();
+
+        waitPaymentPopupClosed();
+
+        refreshThanhToanPhiPhatTab();
+
+        WebElement rowSauKhiHuy = findFineRowByTenNguoiDung(tenNguoiDung);
+        long tongTienSauKhiHuy = parseMoney(getTongTien(rowSauKhiHuy));
+
+        Assert.assertEquals(
+                tongTienSauKhiHuy,
+                tongTienTruocKhiHuy,
+                "Sau khi hủy, tổng tiền phạt phải giữ nguyên"
+        );
+
+        openChiTietPhiPhat(rowSauKhiHuy);
+
+        Assert.assertEquals(
+                countUnpaidFineRowsInPopup(),
+                unpaidBefore,
+                "Sau khi hủy, trạng thái các khoản phạt không được thay đổi"
         );
     }
 
