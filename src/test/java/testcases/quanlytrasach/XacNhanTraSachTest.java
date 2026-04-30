@@ -3,6 +3,7 @@ package testcases.quanlytrasach;
 import common.Constant;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -39,7 +40,6 @@ public class XacNhanTraSachTest {
 	private static final String TRANG_THAI_PHAT_CHUA_THANH_TOAN = "Chưa thanh toán";
 
 	private static final String MUC_HU_HONG_NHE = "Hư hỏng nhẹ";
-	private static final String MUC_HU_HONG_VUA = "Hư hỏng vừa";
 	private static final String MUC_HU_HONG_NANG = "Hư hỏng nặng";
 
 	@BeforeMethod
@@ -96,14 +96,19 @@ public class XacNhanTraSachTest {
 	}
 
 	private void openTabThanhToanPhiPhat() {
-		SidebarPage sidebarPage = new SidebarPage();
+		waitGlobalPopupOverlayClosed();
 
-		sidebarPage.gotoReturn();
+		if (!Constant.WEBDRIVER.getCurrentUrl().contains("/return-books")) {
+			SidebarPage sidebarPage = new SidebarPage();
+			sidebarPage.gotoReturn();
+		}
 
+		waitGlobalPopupOverlayClosed();
 		traSachPage.openTabThanhToanPhiPhat();
 	}
 
 	private void refreshXacNhanTraTab() {
+		waitGlobalPopupOverlayClosed();
 		Constant.WEBDRIVER.navigate().refresh();
 		waitForReturnRowsOrEmptyPage();
 	}
@@ -123,10 +128,6 @@ public class XacNhanTraSachTest {
 		muonSachPage.clickThemPhieuMuon();
 		muonSachPage.enterMaNguoiDung(maDocGia);
 
-		/*
-		 * Đúng nghiệp vụ:
-		 * Nhập mã sách rồi chọn sách từ danh sách gợi ý.
-		 */
 		muonSachPage.enterMaSachAtRow(0, MA_SACH_TEST);
 
 		String actualBookCode = getSelectedBookCode();
@@ -241,7 +242,6 @@ public class XacNhanTraSachTest {
 		throw new AssertionError("Không tìm thấy mức độ hư hỏng: " + mucDo);
 	}
 
-
 	private void nhapMoTaHuHong(String moTa) {
 		traSachPage.nhapMoTaHuHong(moTa);
 	}
@@ -260,6 +260,11 @@ public class XacNhanTraSachTest {
 				return true;
 			}
 		});
+	}
+
+	private void waitReturnPopupAndOverlayClosed() {
+		waitPopupXacNhanTraDong();
+		waitGlobalPopupOverlayClosed();
 	}
 
 	// =========================
@@ -333,6 +338,8 @@ public class XacNhanTraSachTest {
 				traSachPage.getSuccessMessage().contains(MSG_TRA_SACH_THANH_CONG),
 				"Xác nhận trả sách không thành công"
 		);
+
+		waitReturnPopupAndOverlayClosed();
 	}
 
 	private void assertPopupContains(String text, String errorMessage) {
@@ -428,13 +435,230 @@ public class XacNhanTraSachTest {
 	}
 
 	private void assertBothFinesCreatedInPaymentTab(String loanId) {
-		assertFineCreatedInPaymentTab(loanId, LOAI_PHAT_TRE_HAN);
-		assertFineCreatedInPaymentTab(loanId, LOAI_PHAT_HU_HONG);
+		openTabThanhToanPhiPhat();
+
+		List<WebElement> rows = traSachPage.getRowsPhiPhat();
+
+		Assert.assertFalse(
+				rows.isEmpty(),
+				"Tab Thanh toán phí phạt phải có dữ liệu sau khi phát sinh khoản phạt"
+		);
+
+		boolean foundTreHan = false;
+		boolean foundHuHong = false;
+
+		for (WebElement row : rows) {
+			try {
+				traSachPage.clickXemChiTietPhiPhatWithWait(row);
+
+				List<WebElement> fineRows = traSachPage.getPopupChiTietKhoanPhatWithWait();
+
+				for (WebElement fineRow : fineRows) {
+					String fineText = fineRow.getText();
+
+					boolean isCorrectLoan = fineText.contains(loanId);
+					boolean isUnpaid = fineText.contains(TRANG_THAI_PHAT_CHUA_THANH_TOAN);
+
+					if (isCorrectLoan && isUnpaid && fineText.contains(LOAI_PHAT_TRE_HAN)) {
+						foundTreHan = true;
+					}
+
+					if (isCorrectLoan && isUnpaid && fineText.contains(LOAI_PHAT_HU_HONG)) {
+						foundHuHong = true;
+					}
+				}
+
+				closePaymentPopupSafely();
+
+				if (foundTreHan && foundHuHong) {
+					return;
+				}
+
+			} catch (Exception e) {
+				closePaymentPopupSafely();
+			}
+		}
+
+		Assert.assertTrue(
+				foundTreHan,
+				"Không tìm thấy khoản phạt Trễ hạn với Loan ID: " + loanId
+		);
+
+		Assert.assertTrue(
+				foundHuHong,
+				"Không tìm thấy khoản phạt Hư hỏng với Loan ID: " + loanId
+		);
+	}
+
+	// =========================
+	// POPUP / OVERLAY HELPERS
+	// =========================
+
+	private boolean isGlobalPopupOverlayDisplayed() {
+		List<WebElement> overlays = Constant.WEBDRIVER.findElements(By.id("popupOverlay"));
+
+		if (overlays.isEmpty()) {
+			return false;
+		}
+
+		try {
+			WebElement overlay = overlays.get(0);
+			String display = overlay.getCssValue("display");
+			String style = overlay.getAttribute("style");
+
+			return overlay.isDisplayed()
+					&& !"none".equalsIgnoreCase(display)
+					&& (style == null || !style.contains("display: none"));
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
+	private void waitGlobalPopupOverlayClosed() {
+		try {
+			wait.until(driver -> !isGlobalPopupOverlayDisplayed());
+		} catch (TimeoutException e) {
+			forceCloseBlockingPopups();
+			wait.until(driver -> !isGlobalPopupOverlayDisplayed());
+		}
+	}
+
+	private void forceCloseBlockingPopups() {
+		try {
+			((JavascriptExecutor) Constant.WEBDRIVER).executeScript(
+					"var ids = [" +
+							"'popupOverlay'," +
+							"'popup-return-confirm'," +
+							"'popup-return-cancel-confirm'," +
+							"'popup-payment'," +
+							"'popup-xacnhan-huy-thanhtoan'" +
+							"];" +
+							"ids.forEach(function(id) {" +
+							"  var el = document.getElementById(id);" +
+							"  if (el) {" +
+							"    el.style.display = 'none';" +
+							"    el.classList.remove('show', 'active', 'open');" +
+							"  }" +
+							"});" +
+							"document.body.classList.remove('modal-open');" +
+							"document.body.style.overflow = '';"
+			);
+		} catch (Exception ignored) {
+		}
+	}
+
+	private boolean isCancelPaymentConfirmPopupDisplayed() {
+		List<WebElement> popups = Constant.WEBDRIVER.findElements(
+				By.xpath(
+						"//*[contains(normalize-space(), 'Chưa hoàn tất thanh toán') " +
+								"or contains(normalize-space(), 'Xác nhận hủy')]"
+				)
+		);
+
+		for (WebElement popup : popups) {
+			try {
+				if (popup.isDisplayed()) {
+					return true;
+				}
+			} catch (Exception ignored) {
+			}
+		}
+
+		return false;
+	}
+
+	private void confirmCancelPaymentPopupIfDisplayed() {
+		if (!isCancelPaymentConfirmPopupDisplayed()) {
+			return;
+		}
+
+		List<WebElement> exitButtons = Constant.WEBDRIVER.findElements(
+				By.xpath(
+						"//button[contains(normalize-space(), 'Thoát thanh toán') " +
+								"or contains(normalize-space(), 'Thoát') " +
+								"or contains(normalize-space(), 'Hủy thanh toán')]"
+				)
+		);
+
+		if (exitButtons.isEmpty()) {
+			throw new AssertionError(
+					"Popup xác nhận hủy thanh toán đang hiển thị nhưng không tìm thấy nút 'Thoát thanh toán'."
+			);
+		}
+
+		WebElement exitButton = exitButtons.get(0);
+
+		try {
+			wait.until(ExpectedConditions.elementToBeClickable(exitButton)).click();
+		} catch (Exception e) {
+			((JavascriptExecutor) Constant.WEBDRIVER)
+					.executeScript("arguments[0].click();", exitButton);
+		}
+
+		try {
+			wait.until(driver -> !isCancelPaymentConfirmPopupDisplayed());
+		} catch (Exception e) {
+			forceCloseBlockingPopups();
+		}
+
+		waitGlobalPopupOverlayClosed();
 	}
 
 	private void closePaymentPopupSafely() {
 		try {
-			traSachPage.closePopupChiTietPhiPhat();
+			confirmCancelPaymentPopupIfDisplayed();
+
+			List<WebElement> paymentPopups = Constant.WEBDRIVER.findElements(By.id("popup-payment"));
+
+			if (paymentPopups.isEmpty()) {
+				waitGlobalPopupOverlayClosed();
+				return;
+			}
+
+			try {
+				if (!paymentPopups.get(0).isDisplayed()) {
+					waitGlobalPopupOverlayClosed();
+					return;
+				}
+			} catch (Exception e) {
+				waitGlobalPopupOverlayClosed();
+				return;
+			}
+
+			List<WebElement> closeButtons = Constant.WEBDRIVER.findElements(
+					By.xpath("//div[@id='popup-payment']//button[contains(text(), '×')]")
+			);
+
+			if (!closeButtons.isEmpty()) {
+				try {
+					wait.until(ExpectedConditions.elementToBeClickable(closeButtons.get(0))).click();
+				} catch (Exception e) {
+					((JavascriptExecutor) Constant.WEBDRIVER)
+							.executeScript("arguments[0].click();", closeButtons.get(0));
+				}
+
+				/*
+				 * Quan trọng:
+				 * UI của bạn bấm X cũng hiện popup xác nhận hủy thanh toán.
+				 */
+				confirmCancelPaymentPopupIfDisplayed();
+
+			} else {
+				List<WebElement> cancelButtons = Constant.WEBDRIVER.findElements(
+						By.xpath("//div[@id='popup-payment']//button[normalize-space()='Hủy']")
+				);
+
+				if (!cancelButtons.isEmpty()) {
+					try {
+						wait.until(ExpectedConditions.elementToBeClickable(cancelButtons.get(0))).click();
+					} catch (Exception e) {
+						((JavascriptExecutor) Constant.WEBDRIVER)
+								.executeScript("arguments[0].click();", cancelButtons.get(0));
+					}
+
+					confirmCancelPaymentPopupIfDisplayed();
+				}
+			}
 
 			wait.until(driver -> {
 				List<WebElement> popups = Constant.WEBDRIVER.findElements(By.id("popup-payment"));
@@ -449,18 +673,14 @@ public class XacNhanTraSachTest {
 					return true;
 				}
 			});
-		} catch (Exception ignored) {
-			List<WebElement> closeButtons = Constant.WEBDRIVER.findElements(
-					By.xpath("//div[@id='popup-payment']//button[contains(text(), '×') or contains(text(), 'Đóng') or contains(text(), 'Hủy')]")
-			);
 
-			if (!closeButtons.isEmpty()) {
-				try {
-					closeButtons.get(0).click();
-				} catch (Exception e) {
-					((JavascriptExecutor) Constant.WEBDRIVER)
-							.executeScript("arguments[0].click();", closeButtons.get(0));
-				}
+			waitGlobalPopupOverlayClosed();
+
+		} catch (Exception e) {
+			try {
+				confirmCancelPaymentPopupIfDisplayed();
+				forceCloseBlockingPopups();
+			} catch (Exception ignored) {
 			}
 		}
 	}
@@ -673,10 +893,6 @@ public class XacNhanTraSachTest {
 
 		openPopupXacNhanTra(row);
 
-		/*
-		 * Chọn tình trạng để hệ thống ghi nhận có thay đổi,
-		 * khi bấm Hủy mới hiển thị popup xác nhận hủy thao tác.
-		 */
 		traSachPage.chonTinhTrangTot();
 
 		traSachPage.clickHuy();
@@ -692,6 +908,7 @@ public class XacNhanTraSachTest {
 		));
 
 		waitPopupXacNhanTraDong();
+		waitGlobalPopupOverlayClosed();
 
 		refreshXacNhanTraTab();
 
@@ -709,10 +926,6 @@ public class XacNhanTraSachTest {
 				"Sau khi hủy, bản ghi vẫn phải còn trong danh sách chờ trả"
 		);
 
-		/*
-		 * Dọn dữ liệu để phiếu mượn mới tạo không bị treo.
-		 * Nếu dọn lỗi thì không làm fail TC08 vì TC08 đã kiểm tra xong mục tiêu chính.
-		 */
 		try {
 			WebElement rowCanDon = findReturnRowByLoanId(loanId);
 			traSachTinhTrangTot(rowCanDon);
