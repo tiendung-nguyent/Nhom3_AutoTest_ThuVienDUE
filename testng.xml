@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
 <suite name="AutoTestSuite">
-    <test name="xacNhanTraSachTest">
+    <listeners>
+        <listener class-name="utils.TestListener"/>
+    </listeners>
+    <test name="XacNhanTraSachTest">
         <classes>
-            <class name="testcases.quanlytrasach.xacNhanTraSachTest"/>
+            <class name="testcases.quanlytrasach.XacNhanTraSachTest"/>
         </classes>
     </test>
 </suite>
