@@ -44,7 +44,7 @@ public class quanLyTraSachPage extends GeneralPage {
     private final By rowPhiPhat = By.cssSelector("#tab-2 tbody tr");
 
     /*
-     * Bảng Thanh toán phí phạt hiện tại:
+     * Bảng Thanh toán phí phạt:
      * Cột 1: Mã phạt
      * Cột 2: Người dùng
      * Cột 3: Mã người dùng
@@ -59,18 +59,38 @@ public class quanLyTraSachPage extends GeneralPage {
     private final By popupTongTien = By.id("payTotalAmount");
     private final By popupChiTietKhoanPhat = By.cssSelector("#paymentTableBody tr");
 
-    private final By btnXacNhanThanhToan = By.xpath("//button[@onclick='submitPayment();']");
-    private final By radioTienMat = By.xpath("//input[@id='radio-cash']/..");
+    /*
+     * Nút xác nhận thanh toán.
+     * Không chờ success trong Page Object, vì TC03 cần click nút này khi chưa chọn PTTT
+     * và hệ thống chỉ hiển thị lỗi, popup vẫn mở.
+     */
+    private final By btnXacNhanThanhToan = By.xpath(
+            "//div[@id='popup-payment']//button[" +
+                    "contains(normalize-space(), 'Xác nhận thanh toán') " +
+                    "or contains(normalize-space(), 'Xác nhận') " +
+                    "or contains(@onclick, 'submitPayment')" +
+                    "]"
+    );
+
     private final By errorPhuongThucThanhToan = By.cssSelector(".error-phuongthuc-thanhtoan");
 
     private final By btnClosePopupChiTietPhiPhat =
-            By.xpath("//div[@id='popup-payment']//button[contains(text(), '×') or contains(text(), 'Đóng')]");
+            By.xpath("//div[@id='popup-payment']//button[contains(text(), '×') or contains(normalize-space(), 'Đóng')]");
 
     private final By btnHuyThanhToan =
             By.xpath("//div[@id='popup-payment']//button[normalize-space()='Hủy']");
 
     private final By popupXacNhanHuyThanhToan = By.id("popup-xacnhan-huy-thanhtoan");
-    private final By btnXacNhanHuyThanhToan = By.id("btn-xacnhan-huy-thanhtoan-xacnhan");
+
+    private final By btnXacNhanHuyThanhToan = By.xpath(
+            "//div[@id='popup-xacnhan-huy-thanhtoan']//button[" +
+                    "contains(normalize-space(), 'Thoát thanh toán') " +
+                    "or contains(normalize-space(), 'Thoát') " +
+                    "or contains(normalize-space(), 'Hủy thanh toán') " +
+                    "or contains(normalize-space(), 'Xác nhận')" +
+                    "]"
+    );
+
     private final By trangThaiPhat = By.cssSelector("td:nth-child(8)");
 
     // =========================
@@ -182,7 +202,7 @@ public class quanLyTraSachPage extends GeneralPage {
     /**
      * Chọn mức độ hư hỏng.
      *
-     * @param mucDoId Giá trị: "1" = Nhẹ, "2" = Vừa, "3" = Nặng
+     * @param mucDoId Giá trị tương ứng value của radio mức độ hư hỏng.
      */
     public void nhapMucDoHuHong(String mucDoId) {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
@@ -225,19 +245,37 @@ public class quanLyTraSachPage extends GeneralPage {
     public void clickXacNhan() {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
         WebElement button = wait.until(ExpectedConditions.elementToBeClickable(btnXacNhan));
-        button.click();
+
+        try {
+            button.click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) Constant.WEBDRIVER)
+                    .executeScript("arguments[0].click();", button);
+        }
     }
 
     public void clickHuy() {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
         WebElement button = wait.until(ExpectedConditions.elementToBeClickable(btnHuy));
-        button.click();
+
+        try {
+            button.click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) Constant.WEBDRIVER)
+                    .executeScript("arguments[0].click();", button);
+        }
     }
 
     public void xacNhanHuy() {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
         WebElement button = wait.until(ExpectedConditions.elementToBeClickable(btnXacNhanHuy));
-        button.click();
+
+        try {
+            button.click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) Constant.WEBDRIVER)
+                    .executeScript("arguments[0].click();", button);
+        }
     }
 
     public String getSuccessMessage() {
@@ -268,7 +306,12 @@ public class quanLyTraSachPage extends GeneralPage {
         ((JavascriptExecutor) Constant.WEBDRIVER)
                 .executeScript("arguments[0].scrollIntoView({block: 'center'});", tab);
 
-        tab.click();
+        try {
+            tab.click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) Constant.WEBDRIVER)
+                    .executeScript("arguments[0].click();", tab);
+        }
 
         wait.until(driver ->
                 Constant.WEBDRIVER.getPageSource().contains("Thanh toán phí phạt")
@@ -330,9 +373,9 @@ public class quanLyTraSachPage extends GeneralPage {
      */
     public void clickXemChiTietPhiPhatWithWait(WebElement row) {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+        JavascriptExecutor js = (JavascriptExecutor) Constant.WEBDRIVER;
 
-        ((JavascriptExecutor) Constant.WEBDRIVER)
-                .executeScript("arguments[0].scrollIntoView({block: 'center'});", row);
+        js.executeScript("arguments[0].scrollIntoView({block: 'center'});", row);
 
         try {
             List<WebElement> buttons = row.findElements(By.tagName("button"));
@@ -343,15 +386,13 @@ public class quanLyTraSachPage extends GeneralPage {
                 try {
                     wait.until(ExpectedConditions.elementToBeClickable(button)).click();
                 } catch (Exception e) {
-                    ((JavascriptExecutor) Constant.WEBDRIVER)
-                            .executeScript("arguments[0].click();", button);
+                    js.executeScript("arguments[0].click();", button);
                 }
             } else {
                 try {
                     wait.until(ExpectedConditions.elementToBeClickable(row)).click();
                 } catch (Exception e) {
-                    ((JavascriptExecutor) Constant.WEBDRIVER)
-                            .executeScript("arguments[0].click();", row);
+                    js.executeScript("arguments[0].click();", row);
                 }
             }
 
@@ -367,106 +408,163 @@ public class quanLyTraSachPage extends GeneralPage {
 
     public void closePopupChiTietPhiPhat() {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+        JavascriptExecutor js = (JavascriptExecutor) Constant.WEBDRIVER;
+
         WebElement button = wait.until(ExpectedConditions.elementToBeClickable(btnClosePopupChiTietPhiPhat));
-        button.click();
-    }
 
-    public void clickXacNhanThanhToan() {
-        WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
-        // Try several strategies to find the confirm payment button (id, onclick, or visible text)
-        By[] candidates = new By[]{
-                By.id("btnConfirmPayment"),
-                By.xpath("//button[contains(@onclick,'submitPayment')]") ,
-                By.xpath("//div[@id='popup-payment']//button[normalize-space()='Xác nhận']"),
-                By.xpath("//button[contains(normalize-space(.),'Xác nhận')]")
-        };
-
-        Exception lastEx = null;
-        for (By candidate : candidates) {
-            try {
-                List<WebElement> els = Constant.WEBDRIVER.findElements(candidate);
-                if (els.isEmpty()) continue;
-
-                WebElement button = wait.until(ExpectedConditions.elementToBeClickable(candidate));
-                ((JavascriptExecutor) Constant.WEBDRIVER).executeScript("arguments[0].scrollIntoView({block: 'center'});", button);
-                try {
-                    button.click();
-                } catch (Exception e) {
-                    ((JavascriptExecutor) Constant.WEBDRIVER).executeScript("arguments[0].click();", button);
-                }
-
-                // Wait for either success toast OR popup closed OR total updated to 0
-                boolean outcome = wait.until(driver -> {
-                    try {
-                        // toast
-                        List<WebElement> toasts = driver.findElements(toastSuccess);
-                        if (!toasts.isEmpty() && toasts.get(0).isDisplayed()) return true;
-                    } catch (Exception ignored) {}
-
-                    try {
-                        List<WebElement> popups = driver.findElements(popupChiTietPhiPhat);
-                        if (popups.isEmpty()) return true; // closed
-                        try {
-                            if (!popups.get(0).isDisplayed()) return true;
-                        } catch (Exception ignored) {}
-                    } catch (Exception ignored) {}
-
-                    try {
-                        WebElement totalEl = driver.findElement(popupTongTien);
-                        String txt = totalEl.getText();
-                        if (txt != null && txt.trim().matches("^\\D*0\\D*$")) return true;
-                    } catch (Exception ignored) {}
-
-                    return false;
-                });
-
-                if (outcome) return;
-
-            } catch (Exception e) {
-                lastEx = e;
-            }
+        try {
+            button.click();
+        } catch (Exception e) {
+            js.executeScript("arguments[0].click();", button);
         }
-
-        // If none succeeded, throw an informative error
-        throw new AssertionError("Không tìm thấy hoặc không thể click nút Xác nhận thanh toán", lastEx);
     }
 
     /**
-     * Chọn phương thức thanh toán Tiền mặt (radio theo name/value) một cách an toàn.
+     * Chỉ thực hiện click nút Xác nhận thanh toán.
+     * Không chờ success/popup đóng ở đây, vì TC03 cần click khi chưa chọn phương thức
+     * và hệ thống phải giữ popup mở để hiển thị lỗi.
      */
+    public void clickXacNhanThanhToan() {
+        WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+        JavascriptExecutor js = (JavascriptExecutor) Constant.WEBDRIVER;
+
+        try {
+            wait.until(ExpectedConditions.visibilityOfElementLocated(popupChiTietPhiPhat));
+
+            List<WebElement> buttons = Constant.WEBDRIVER.findElements(btnXacNhanThanhToan);
+
+            if (buttons.isEmpty()) {
+                throw new AssertionError(
+                        "Không tìm thấy nút Xác nhận thanh toán trong popup. Nội dung popup: "
+                                + Constant.WEBDRIVER.findElement(popupChiTietPhiPhat).getText()
+                );
+            }
+
+            WebElement button = null;
+
+            for (WebElement item : buttons) {
+                try {
+                    String text = item.getText() == null ? "" : item.getText().trim();
+
+                    if (item.isDisplayed()
+                            && item.isEnabled()
+                            && !text.contains("Hủy")
+                            && !text.contains("Thoát")
+                            && !text.contains("Tiếp tục")) {
+                        button = item;
+                        break;
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+
+            if (button == null) {
+                button = buttons.get(0);
+            }
+
+            js.executeScript("arguments[0].scrollIntoView({block: 'center'});", button);
+
+            try {
+                wait.until(ExpectedConditions.elementToBeClickable(button)).click();
+            } catch (Exception e) {
+                js.executeScript("arguments[0].click();", button);
+            }
+
+        } catch (Exception e) {
+            throw new AssertionError("Không tìm thấy hoặc không thể click nút Xác nhận thanh toán", e);
+        }
+    }
+
+    // =========================
+    // Chọn phương thức thanh toán
+    // =========================
+
+    private WebElement findRadioTienMatInput(WebDriverWait wait) {
+        wait.until(ExpectedConditions.visibilityOfElementLocated(popupChiTietPhiPhat));
+
+        By[] candidates = new By[]{
+                By.cssSelector("#popup-payment input[type='radio'][name='paymentMethodNew'][value='cash']"),
+                By.cssSelector("#popup-payment input[type='radio'][value='cash']"),
+                By.xpath("//div[@id='popup-payment']//label[contains(normalize-space(.), 'Tiền mặt')]//input[@type='radio']"),
+                By.xpath("//div[@id='popup-payment']//input[@type='radio' and (contains(@id, 'cash') or contains(@name, 'cash'))]"),
+                By.xpath("//div[@id='popup-payment']//input[@type='radio' and (contains(@value, 'tien') or contains(@name, 'tien'))]"),
+                By.xpath("//div[@id='popup-payment']//input[@type='radio']")
+        };
+
+        for (By locator : candidates) {
+            List<WebElement> elements = Constant.WEBDRIVER.findElements(locator);
+
+            if (!elements.isEmpty()) {
+                return elements.get(0);
+            }
+        }
+
+        String popupHtml = "";
+
+        try {
+            popupHtml = Constant.WEBDRIVER.findElement(popupChiTietPhiPhat).getAttribute("innerHTML");
+        } catch (Exception ignored) {
+        }
+
+        throw new AssertionError(
+                "Không tìm thấy radio phương thức thanh toán Tiền mặt trong popup. HTML popup: " + popupHtml
+        );
+    }
+
+    private boolean isRadioChecked(WebElement radio) {
+        JavascriptExecutor js = (JavascriptExecutor) Constant.WEBDRIVER;
+
+        Object checked = js.executeScript(
+                "return arguments[0].checked === true;",
+                radio
+        );
+
+        return Boolean.TRUE.equals(checked);
+    }
+
     public void chonPhuongThucThanhToanTienMat() {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("popup-payment")));
-        By radioTienMat = By.cssSelector("input[type='radio'][name='paymentMethodNew'][value='cash']");
-        List<WebElement> radios = Constant.WEBDRIVER.findElements(radioTienMat);
-        if (radios.isEmpty()) {
-            WebElement popup = Constant.WEBDRIVER.findElement(By.id("popup-payment"));
-            System.out.println("DEBUG HTML popup-payment: " + popup.getAttribute("innerHTML"));
-            throw new AssertionError("Không tìm thấy radio button Tiền mặt (name=paymentMethodNew, value=cash) trong popup!");
-        }
-        WebElement input = radios.get(0);
-        ((JavascriptExecutor) Constant.WEBDRIVER).executeScript("arguments[0].scrollIntoView({block: 'center'});", input);
+        JavascriptExecutor js = (JavascriptExecutor) Constant.WEBDRIVER;
+
+        WebElement radio = findRadioTienMatInput(wait);
+
+        js.executeScript("arguments[0].scrollIntoView({block: 'center'});", radio);
+
         try {
-            wait.until(ExpectedConditions.elementToBeClickable(input)).click();
-        } catch (Exception e) {
+            WebElement label = radio.findElement(By.xpath("./ancestor::label[1]"));
+            wait.until(ExpectedConditions.elementToBeClickable(label)).click();
+        } catch (Exception e1) {
             try {
-                // fallback: click the label if input click fails
-                WebElement label = input.findElement(By.xpath("ancestor::label[1]"));
-                wait.until(ExpectedConditions.elementToBeClickable(label)).click();
-            } catch (Exception ex) {
-                ((JavascriptExecutor) Constant.WEBDRIVER).executeScript("arguments[0].click();", input);
+                wait.until(ExpectedConditions.elementToBeClickable(radio)).click();
+            } catch (Exception e2) {
+                js.executeScript("arguments[0].click();", radio);
             }
         }
-        // small wait for UI to update selection
-        wait.until(driver -> {
-            try {
-                return input.isSelected();
-            } catch (Exception e) {
-                return false;
-            }
-        });
-        if (!input.isSelected()) {
-            throw new AssertionError("Không chọn được phương thức thanh toán Tiền mặt!");
+
+        if (!isRadioChecked(radio)) {
+            js.executeScript(
+                    "arguments[0].checked = true;" +
+                            "arguments[0].dispatchEvent(new Event('input', { bubbles: true }));" +
+                            "arguments[0].dispatchEvent(new Event('change', { bubbles: true }));",
+                    radio
+            );
+        }
+
+        wait.until(driver -> isRadioChecked(radio));
+
+        if (!isRadioChecked(radio)) {
+            throw new AssertionError("Không chọn được phương thức thanh toán Tiền mặt.");
+        }
+    }
+
+    public boolean isPhuongThucTienMatSelected() {
+        try {
+            WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(5));
+            WebElement radio = findRadioTienMatInput(wait);
+
+            return isRadioChecked(radio);
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -476,8 +574,15 @@ public class quanLyTraSachPage extends GeneralPage {
 
     public void clickHuyThanhToan() {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+        JavascriptExecutor js = (JavascriptExecutor) Constant.WEBDRIVER;
+
         WebElement button = wait.until(ExpectedConditions.elementToBeClickable(btnHuyThanhToan));
-        button.click();
+
+        try {
+            button.click();
+        } catch (Exception e) {
+            js.executeScript("arguments[0].click();", button);
+        }
     }
 
     public WebElement getPopupXacNhanHuyThanhToan() {
@@ -486,25 +591,41 @@ public class quanLyTraSachPage extends GeneralPage {
 
     public void xacNhanHuyThanhToan() {
         WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+        JavascriptExecutor js = (JavascriptExecutor) Constant.WEBDRIVER;
+
         WebElement button = wait.until(ExpectedConditions.elementToBeClickable(btnXacNhanHuyThanhToan));
-        button.click();
+
+        try {
+            button.click();
+        } catch (Exception e) {
+            js.executeScript("arguments[0].click();", button);
+        }
     }
 
     public boolean isXacNhanThanhToanEnabled() {
         try {
-            return Constant.WEBDRIVER.findElement(btnXacNhanThanhToan).isEnabled();
-        } catch (Exception e) {
-            return false;
-        }
-    }
+            List<WebElement> buttons = Constant.WEBDRIVER.findElements(btnXacNhanThanhToan);
 
-    /**
-     * Kiểm tra radio "Tiền mặt" đã được chọn chưa.
-     */
-    public boolean isPhuongThucTienMatSelected() {
-        try {
-            WebElement input = Constant.WEBDRIVER.findElement(By.cssSelector("input[type='radio'][name='paymentMethodNew'][value='cash']"));
-            return input.isSelected();
+            if (buttons.isEmpty()) {
+                return false;
+            }
+
+            for (WebElement button : buttons) {
+                try {
+                    String text = button.getText() == null ? "" : button.getText().trim();
+
+                    if (button.isDisplayed()
+                            && button.isEnabled()
+                            && !text.contains("Hủy")
+                            && !text.contains("Thoát")
+                            && !text.contains("Tiếp tục")) {
+                        return true;
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+
+            return false;
         } catch (Exception e) {
             return false;
         }
