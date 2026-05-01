@@ -415,7 +415,7 @@ public class XacNhanTraSachTest {
 
                 closePaymentPopupSafely();
             } catch (Exception e) {
-                closePaymentPopupSafely();
+                ;
             }
         }
 
@@ -431,7 +431,71 @@ public class XacNhanTraSachTest {
         assertFineCreatedInPaymentTab(loanId, LOAI_PHAT_TRE_HAN);
         assertFineCreatedInPaymentTab(loanId, LOAI_PHAT_HU_HONG);
     }
+    private void assertBothFinesExistInOnePopup(String loanId, String nguoiMuon) {
+        openTabThanhToanPhiPhat();
 
+        wait.until(driver -> !traSachPage.getRowsPhiPhat().isEmpty());
+        List<WebElement> rows = traSachPage.getRowsPhiPhat();
+
+        List<WebElement> targetRows = rows.stream()
+                .filter(r -> r.getText().contains(nguoiMuon))
+                .toList();
+
+        Assert.assertFalse(
+                targetRows.isEmpty(),
+                "Không tìm thấy người mượn '" + nguoiMuon + "' trong danh sách phí phạt tổng quát."
+        );
+
+        boolean isFoundAndValid = false;
+
+        for (WebElement targetRow : targetRows) {
+            try {
+                ((JavascriptExecutor) Constant.WEBDRIVER).executeScript("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", targetRow);
+                traSachPage.clickXemChiTietPhiPhatWithWait(targetRow);
+
+                wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("popup-payment")));
+                wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("paymentTableBody")));
+
+                List<WebElement> fineRows = traSachPage.getPopupChiTietKhoanPhatWithWait();
+
+                boolean containsTargetLoan = fineRows.stream().anyMatch(r -> r.getText().contains(loanId));
+
+                if (containsTargetLoan) {
+                    int countFines = 0;
+                    boolean hasTreHan = false;
+                    boolean hasHuHong = false;
+
+                    for (WebElement fineRow : fineRows) {
+                        String text = fineRow.getText();
+
+                        if (text.contains(loanId) && text.contains(TRANG_THAI_PHAT_CHUA_THANH_TOAN)) {
+                            if (text.contains(LOAI_PHAT_TRE_HAN) && !hasTreHan) {
+                                hasTreHan = true;
+                                countFines++;
+                            } else if (text.contains(LOAI_PHAT_HU_HONG) && !hasHuHong) {
+                                hasHuHong = true;
+                                countFines++;
+                            }
+                        }
+                    }
+
+                    if (countFines == 2) {
+                        isFoundAndValid = true;
+                        break;
+                    }
+                }
+            } finally {
+                closePaymentPopupSafely();
+
+                try { Thread.sleep(500); } catch (InterruptedException ignored) {}
+            }
+        }
+
+        Assert.assertTrue(
+                isFoundAndValid,
+                "Đã tìm kiếm các khoản phạt của '" + nguoiMuon + "' nhưng không thấy đủ 2 loại phạt (Trễ hạn & Hư hỏng) cho mã phiếu: " + loanId
+        );
+    }
     private void closePaymentPopupSafely() {
         try {
             traSachPage.closePopupChiTietPhiPhat();
@@ -641,6 +705,7 @@ public class XacNhanTraSachTest {
     public void TC_TS_07_traSachQuaHanVaHuHong() {
         WebElement row = findOverdueRow();
         String loanId = row.getAttribute("data-loan-id");
+        String nguoiMuon = row.getAttribute("data-borrower");
 
         Assert.assertEquals(
                 getTrangThai(row),
@@ -654,7 +719,7 @@ public class XacNhanTraSachTest {
                 "Rách bìa, mất trang"
         );
 
-        assertBothFinesCreatedInPaymentTab(loanId);
+        assertBothFinesExistInOnePopup(loanId, nguoiMuon);
     }
 
     @Test
