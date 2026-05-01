@@ -23,26 +23,136 @@ public class xacNhanDenSachTest {
     private WebDriver driver;
     private WebDriverWait wait;
 
-    @BeforeClass
-    public void setUp() {
-        driver = new ChromeDriver();
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        driver.manage().window().maximize();
-    }
-
     @BeforeMethod
-    public void preCondition() {
+    public void setupLogin() {
+        System.out.println("========== SETUP LOGIN ==========");
+
+        if (Constant.WEBDRIVER == null) {
+            Constant.WEBDRIVER = new ChromeDriver();
+            Constant.WEBDRIVER.manage().window().maximize();
+        }
+
+        driver = Constant.WEBDRIVER;
+        wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+
         loginAsUser();
 
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//aside")));
+
+        goToQuanLyTraSach();
+
+        System.out.println("========== READY FOR TEST ==========");
     }
 
     @AfterClass
     public void tearDown() {
-        if (driver != null) {
-            driver.quit();
+        if (Constant.WEBDRIVER != null) {
+            Constant.WEBDRIVER.quit();
+            Constant.WEBDRIVER = null;
         }
     }
 
+    private void clickFirstVisible(By... locators) {
+
+        WebElement element = findFirstVisible(locators);
+
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(element)).click();
+        } catch (Exception e) {
+            ((JavascriptExecutor) driver).executeScript(
+                    "arguments[0].scrollIntoView({block:'center'});",
+                    element
+            );
+
+            ((JavascriptExecutor) driver).executeScript(
+                    "arguments[0].click();",
+                    element
+            );
+        }
+    }
+
+    // =========================
+// CHECK ĐÃ LOGIN HAY CHƯA
+// =========================
+    private boolean isLoggedIn() {
+        try {
+            return driver != null
+                    && !driver.findElements(By.xpath("//aside")).isEmpty();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+
+    // =========================
+// ĐẢM BẢO ĐANG Ở ĐÚNG TRANG QUẢN LÝ TRẢ SÁCH
+// =========================
+    private void ensureQuanLyTraSachPage() {
+        try {
+            boolean isCorrectPage =
+                    driver.getCurrentUrl().contains("return")
+                            || !driver.findElements(
+                            By.xpath("//*[contains(text(),'Quản lý trả sách')]")
+                    ).isEmpty();
+
+            if (!isCorrectPage) {
+                System.out.println("Sai trang -> Điều hướng lại");
+                goToQuanLyTraSach();
+            } else {
+                System.out.println("Đúng trang Quản lý trả sách");
+            }
+
+        } catch (Exception e) {
+            System.out.println("Không xác định được trang -> Điều hướng lại");
+            goToQuanLyTraSach();
+        }
+    }
+
+
+    // =========================
+// LOGIN USER NHANH
+// =========================
+    private void loginAsUser() {
+        driver.get(Constant.THUVIEN_URL);
+
+        // Nếu đã vào dashboard rồi thì bỏ qua
+        if (isLoggedIn()) {
+            return;
+        }
+
+        WebElement usernameInput = findFirstVisible(
+                By.id("username"),
+                By.name("username"),
+                By.cssSelector("input[type='text']")
+        );
+        usernameInput.clear();
+        usernameInput.sendKeys(Constant.USERNAME);
+
+        WebElement passwordInput = findFirstVisible(
+                By.id("password"),
+                By.name("password"),
+                By.cssSelector("input[type='password']")
+        );
+        passwordInput.clear();
+        passwordInput.sendKeys(Constant.PASSWORD);
+
+        WebElement loginButton = findFirstClickable(
+                By.id("login-btn"),
+                By.cssSelector("button[type='submit']"),
+                By.xpath("//button[contains(text(),'Đăng nhập')]")
+        );
+
+        ((JavascriptExecutor) driver).executeScript(
+                "arguments[0].click();",
+                loginButton
+        );
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//aside")
+        ));
+
+        System.out.println("Login thành công");
+    }
     @Test
     public void TC_DS_01_HienThiDungTabVaDanhSachChoXacNhanDenSach() {
         clickByJS(By.xpath("//span[contains(text(),'Trả sách')]"));
@@ -121,11 +231,11 @@ public class xacNhanDenSachTest {
                     "Phát hiện hồ sơ sai trạng thái: " + trangThai
             );
             if (
-                    maHoSo.equals("HS-001")
-                            && sachCanDen.equals("Kinh tế vi mô")
-                            && maSach.equals("KT001")
-                            && nguoiDen.equals("Trần Thị Bình")
-                            && ngayBaoMat.equals("18/01/2026")
+                    maHoSo.equals("PM0000001")
+                            && sachCanDen.equals("Cấu Trúc Dữ Liệu")
+                            && maSach.equals("MS0002-001")
+                            && nguoiDen.equals("Trần Thị B")
+                            && ngayBaoMat.equals("01/05/2026")
                             && (trangThai.equalsIgnoreCase("Chờ đền sách")
                             || trangThai.toLowerCase().contains("chờ đền sách"))
             ) {
@@ -172,11 +282,11 @@ public class xacNhanDenSachTest {
 
         WebElement selectedRow = null;
 
-        String expectedMaHoSo = "HS-001";
-        String expectedTenSach = "Kinh tế vi mô";
-        String expectedMaSach = "KT001";
-        String expectedNguoiDen = "Trần Thị Bình";
-        String expectedNgayBaoMat = "18/01/2026";
+        String expectedMaHoSo = "PM0000001";
+        String expectedTenSach = "Cấu Trúc Dữ Liệu";
+        String expectedMaSach = "MS0002-001";
+        String expectedNguoiDen = "Trần Thị B";
+        String expectedNgayBaoMat = "01/05/2026";
 
         for (WebElement row : rows) {
 
@@ -283,7 +393,7 @@ public class xacNhanDenSachTest {
 
     @Test
     public void TC_DS_03_XacNhanDenSachThanhCongVoiHoSoHopLe() throws Exception {
-        String targetMaHoSo = "HS-002";
+        String targetMaHoSo = "PM0000001";
         String newBookCode = "MS0001-010";
 
         clickByJS(By.xpath("//span[contains(text(),'Trả sách')]"));
@@ -356,7 +466,7 @@ public class xacNhanDenSachTest {
                 continue;
             }
             String currentMaHoSo = row.findElement(By.xpath("./td[1]")).getText().trim();
-            if (currentMaHoSo.equals("HS-002")) {
+            if (currentMaHoSo.equals("PM0000001")) {
                 selectedRow = row;
                 break;
             }
@@ -426,7 +536,7 @@ public class xacNhanDenSachTest {
                 continue;
             }
             String currentMaHoSo = row.findElement(By.xpath("./td[1]")).getText().trim();
-            if (currentMaHoSo.equals("HS-002")) {
+            if (currentMaHoSo.equals("PM0000001")) {
                 sameRow = row;
                 break;
             }
@@ -485,7 +595,7 @@ public class xacNhanDenSachTest {
 
     @Test
     public void TC_DS_06_XacNhanDenSachThatBaiDoLoiHeThong() throws Exception {
-        String targetMaHoSo = "HS-002";
+        String targetMaHoSo = "PM0000001";
 
         clickByJS(By.xpath("//span[contains(text(),'Trả sách')]"));
 
@@ -556,7 +666,7 @@ public class xacNhanDenSachTest {
 
     @Test
     public void TC_DS_08_KhongTaoTrungXacNhanDenSachKhiThaoTacLap() throws Exception {
-        String targetMaHoSo = "HS-002";
+        String targetMaHoSo = "PM0000001";
         String maSachMoi = "MS0001-006";
 
         WebElement menuTraSach = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//span[contains(text(),'Trả sách')]")));
@@ -608,42 +718,97 @@ public class xacNhanDenSachTest {
 
         Assert.assertTrue(rowsAfter.isEmpty());
     }
+    // =========================
+// ĐI TỚI QUẢN LÝ TRẢ SÁCH
+// =========================
+    private void goToQuanLyTraSach() {
+        WebElement traSachMenu = findFirstClickable(
+                By.xpath("//span[contains(text(),'Trả sách')]"),
+                By.xpath("//a[contains(.,'Trả sách')]"),
+                By.xpath("//div[contains(text(),'Trả sách')]")
+        );
+
+        ((JavascriptExecutor) driver).executeScript(
+                "arguments[0].scrollIntoView({block:'center'});",
+                traSachMenu
+        );
+
+        ((JavascriptExecutor) driver).executeScript(
+                "arguments[0].click();",
+                traSachMenu
+        );
+
+        wait.until(ExpectedConditions.or(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//*[contains(text(),'Quản lý trả sách')]")
+                ),
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//button[contains(@onclick,'tab-3')]")
+                ),
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//button[contains(@onclick,'tab-4')]")
+                )
+        ));
+
+        System.out.println(" Đã vào màn hình Quản lý trả sách!");
+    }
 
 
+    // =========================
+// FIND ELEMENT ĐẦU TIÊN HIỂN THỊ
+// =========================
+    private WebElement findFirstVisible(By... locators) {
+        for (By locator : locators) {
+            try {
+                WebElement element = wait.until(
+                        ExpectedConditions.visibilityOfElementLocated(locator)
+                );
+                if (element.isDisplayed()) {
+                    return element;
+                }
+            } catch (Exception ignored) {}
+        }
+
+        throw new NoSuchElementException(" Không tìm thấy phần tử hiển thị!");
+    }
+
+
+    // =========================
+// FIND ELEMENT ĐẦU TIÊN CLICK ĐƯỢC
+// =========================
+    private WebElement findFirstClickable(By... locators) {
+        for (By locator : locators) {
+            try {
+                WebElement element = wait.until(
+                        ExpectedConditions.elementToBeClickable(locator)
+                );
+                if (element.isDisplayed()) {
+                    return element;
+                }
+            } catch (Exception ignored) {}
+        }
+
+        throw new NoSuchElementException(" Không tìm thấy phần tử click được!");
+    }
+
+
+    // =========================
+// CLICK JS CHUẨN
+// =========================
     private void clickByJS(By locator) {
-        WebElement element = wait.until(ExpectedConditions.presenceOfElementLocated(locator));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
-    }
+        WebElement element = wait.until(
+                ExpectedConditions.presenceOfElementLocated(locator)
+        );
 
+        ((JavascriptExecutor) driver).executeScript(
+                "arguments[0].scrollIntoView({block:'center'});",
+                element
+        );
 
-    private void loginAsUser() {
-        driver.get(Constant.THUVIEN_URL);
-        typeFirstVisible(Constant.USERNAME, By.id("username"), By.name("username"));
-        typeFirstVisible(Constant.PASSWORD, By.id("password"), By.name("password"));
-        clickFirstVisible(By.id("login-btn"), By.cssSelector("button[type='submit']"));
-
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//aside")));
-    }
-
-    private void typeFirstVisible(String text, By... locators) {
-        for (By locator : locators) {
-            try {
-                WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
-                element.clear();
-                element.sendKeys(text);
-                return;
-            } catch (Exception ignored) {}
-        }
-    }
-
-    private void clickFirstVisible(By... locators) {
-        for (By locator : locators) {
-            try {
-                WebElement element = wait.until(ExpectedConditions.elementToBeClickable(locator));
-                element.click();
-                return;
-            } catch (Exception ignored) {}
-        }
+        ((JavascriptExecutor) driver).executeScript(
+                "arguments[0].click();",
+                element
+        );
     }
 
 }
