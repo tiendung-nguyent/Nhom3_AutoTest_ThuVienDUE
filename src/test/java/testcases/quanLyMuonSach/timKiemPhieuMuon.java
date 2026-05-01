@@ -34,10 +34,14 @@ public class timKiemPhieuMuon {
     public void BR_T001() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
-        sidebarPage.gotoBorrow();
+        sidebarPage.gotoUsers();
+        nguoiDungPage nguoiDung = new nguoiDungPage();
+        String maDocGiaHopLe = nguoiDung.getUnqualifiedReaderID();        sidebarPage.gotoBorrow();
 
         muonSachPage.clickThemPhieuMuon();
-        muonSachPage.enterMaSachAtRow(0, "MS 0");
+        muonSachPage.enterMaNguoiDung(maDocGiaHopLe);
+
+        muonSachPage.enterMaSachAtRow(0, "MS0");
         muonSachPage.clickLuuPhieuMuon();
 
         String tuKhoaTimKiem = muonSachPage.getMaPhieuMuonDauTien();
