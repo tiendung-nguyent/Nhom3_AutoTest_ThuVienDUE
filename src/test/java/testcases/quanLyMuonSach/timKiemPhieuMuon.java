@@ -36,7 +36,8 @@ public class timKiemPhieuMuon {
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
         sidebarPage.gotoUsers();
         nguoiDungPage nguoiDung = new nguoiDungPage();
-        String maDocGiaHopLe = nguoiDung.getUnqualifiedReaderID();        sidebarPage.gotoBorrow();
+        String maDocGiaHopLe = nguoiDung.getUnqualifiedReaderID();        
+        sidebarPage.gotoBorrow();
 
         muonSachPage.clickThemPhieuMuon();
         muonSachPage.enterMaNguoiDung(maDocGiaHopLe);
