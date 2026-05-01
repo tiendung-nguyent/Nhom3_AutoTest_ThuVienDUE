@@ -72,11 +72,7 @@ public class quanLyTraSachPage extends GeneralPage {
     private final By popupTenNguoiDung = By.id("payUserName");
     private final By popupTongTien = By.id("payTotalAmount");
 
-    /*
-     * Chỉ lấy dòng chi tiết khoản phạt thật trong popup.
-     * Popup chi tiết có 8 cột:
-     * Mã sách trong kho, Tên sách, Loại phạt, Lý do, Số tiền, Ngày tạo, Mã phiếu mượn, Trạng thái.
-     */
+
     private final By popupChiTietKhoanPhat = By.xpath(
             "//tbody[@id='paymentTableBody']/tr[" +
                     "td and " +
