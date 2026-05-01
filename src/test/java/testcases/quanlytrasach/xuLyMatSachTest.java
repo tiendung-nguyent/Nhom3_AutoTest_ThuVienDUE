@@ -1,4 +1,4 @@
-package testcases.returnbook;
+package testcases.quanlytrasach;
 import common.Constant;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -15,7 +15,7 @@ import java.util.List;
 import org.openqa.selenium.WebElement;
 
 
-public class XuLyMatSachTest {
+public class xuLyMatSachTest {
     private WebDriver driver;
     private WebDriverWait wait;
 
