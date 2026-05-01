@@ -1,12 +1,11 @@
-package pageobjects;
+package pageobjects.layout;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
-import common.Constant;
+import core.BasePage;
 
-public class SidebarPage {
+public class SidebarPage extends BasePage {
 
-    // --- Locators ---
     private final By menuTongQuan = By.xpath("//aside[@class='sidebar']//a[@href='/dashboard/']");
     private final By menuBorrow = By.xpath("//aside[@class='sidebar']//a[@href='/borrow-books/']");
     private final By menuReturn = By.xpath("//aside[@class='sidebar']//a[@href='/return-books/']");
@@ -14,32 +13,29 @@ public class SidebarPage {
     private final By menuUsers = By.xpath("//aside[@class='sidebar']//a[@href='/users/']");
     private final By menuReports = By.xpath("//aside[@class='sidebar']//a[@href='/reports/']");
 
-    // --- Elements ---
     public WebElement getMenuTongQuan() {
-        return Constant.WEBDRIVER.findElement(menuTongQuan);
+        return driver.findElement(menuTongQuan);
     }
 
     public WebElement getMenuBorrow() {
-        return Constant.WEBDRIVER.findElement(menuBorrow);
+        return driver.findElement(menuBorrow);
     }
 
     public WebElement getMenuReturn() {
-        return Constant.WEBDRIVER.findElement(menuReturn);
+        return driver.findElement(menuReturn);
     }
 
     public WebElement getMenuBooks() {
-        return Constant.WEBDRIVER.findElement(menuBooks);
+        return driver.findElement(menuBooks);
     }
 
     public WebElement getMenuUsers() {
-        return Constant.WEBDRIVER.findElement(menuUsers);
+        return driver.findElement(menuUsers);
     }
 
     public WebElement getMenuReports() {
-        return Constant.WEBDRIVER.findElement(menuReports);
+        return driver.findElement(menuReports);
     }
-
-    // --- Actions ---
 
     public void gotoTongQuan() {
         this.getMenuTongQuan().click();
@@ -65,13 +61,8 @@ public class SidebarPage {
         this.getMenuReports().click();
     }
 
-    /**
-     * Kiểm tra xem một menu item có đang được chọn (active) hay không.
-     * @param href link của menu cần kiểm tra (ví dụ: "/borrow/")
-     * @return true nếu li chứa a có class 'active'
-     */
     public boolean isMenuItemActive(String href) {
         String xpath = String.format("//aside[@class='sidebar']//li[a[@href='%s']]", href);
-        return Constant.WEBDRIVER.findElement(By.xpath(xpath)).getAttribute("class").contains("active");
+        return driver.findElement(By.xpath(xpath)).getAttribute("class").contains("active");
     }
 }

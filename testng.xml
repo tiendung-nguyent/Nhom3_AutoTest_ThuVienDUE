@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
 <suite name="AutoTestSuite">
-    <listeners>
-        <listener class-name="utils.TestListener"/>
-    </listeners>
-    <test name="XacNhanTraSachTest">
+    <test name="LibraryAutomationTests">
         <classes>
-            <class name="testcases.quanlytrasach.XacNhanTraSachTest"/>
+            <!-- Module Borrow -->
+            <class name="testcases.borrow.ThemPhieuMuonTest"/>
+            <class name="testcases.borrow.GiaHanPhieuMuonTest"/>
+            <class name="testcases.borrow.TimKiemPhieuMuonTest"/>
+            <class name="testcases.borrow.XoaPhieuMuonTest"/>
+            
+            <!-- Module Return Book -->
+            <class name="testcases.returnbook.returnconfirm.ReturnConfirmTest"/>
+            <class name="testcases.returnbook.paymentfine.PaymentFineTest"/>
+            <class name="testcases.returnbook.TimKiemTraSachTest"/>
+            <class name="testcases.returnbook.XacNhanDenSachTest"/>
+            <class name="testcases.returnbook.XuLyMatSachTest"/>
         </classes>
     </test>
 </suite>
-
