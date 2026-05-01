@@ -265,7 +265,7 @@ public class xacNhanDenSachTest {
                 "Popup thiếu nút Hủy!"
         );
 
-       WebElement btnConfirmPopup = wait.until(ExpectedConditions.visibilityOfElementLocated(
+        WebElement btnConfirmPopup = wait.until(ExpectedConditions.visibilityOfElementLocated(
                 By.xpath("//button[@onclick='submitCompensateConfirm()']")
         ));
 
@@ -273,12 +273,12 @@ public class xacNhanDenSachTest {
                 btnConfirmPopup.isDisplayed(),
                 "Popup thiếu nút Xác nhận hoàn tất!"
         );
-         System.out.println("PASS TC_DS_02");
+        System.out.println("PASS TC_DS_02");
         System.out.println("Popup mở đúng hồ sơ HS-001");
         System.out.println("Thông tin popup khớp dữ liệu dòng đã chọn");
         System.out.println("Nút 'Xác nhận hoàn tất' đã hiển thị sẵn sàng.");
 
-        }
+    }
 
 
     @Test
@@ -645,6 +645,7 @@ public class xacNhanDenSachTest {
             } catch (Exception ignored) {}
         }
     }
-    // Thêm test case cho chức năng xác nhận đền sách tại đây
+
 }
+
 

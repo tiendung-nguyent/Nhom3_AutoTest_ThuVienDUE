@@ -16,8 +16,8 @@ import java.time.Duration;
 import java.util.List;
 
 public class timKiemTraSachTest {
-    private static final String MA_PHIEU_MUON = "PM0000001";
-    private static final String TEN_NGUOI_MUON = "Lê Thị Bình";
+    private static final String MA_PHIEU_MUON = "PM001";
+    private static final String TEN_NGUOI_MUON = "Nguyễn Văn A";
     private static final String TU_KHOA_KHONG_TON_TAI = "Trần Văn Z";
 
     private WebDriver driver;
@@ -80,7 +80,6 @@ public class timKiemTraSachTest {
     private void goToQuanLyTraSach() {
         clickFirstVisible(
                 By.xpath("//aside//a[@href='/return/']"),
-//                By.xpath("//aside//*[contains(normalize-space(), 'Tra sach')]"),
                 By.xpath("//aside//a[.//span[normalize-space()='Trả sách']]")
         );
 
@@ -98,14 +97,10 @@ public class timKiemTraSachTest {
     public void TS_F001_timKiemThanhCongBangMaPhieuMuon() {
 
         timKiem(MA_PHIEU_MUON);
-
-        // SỬA CHỖ NÀY: Dùng By.tagName("table") thay vì By.id("loan-table")
         wait.until(ExpectedConditions.textToBePresentInElementLocated(
                 By.tagName("table"),
                 MA_PHIEU_MUON
         ));
-
-        // Lấy dòng dữ liệu (Giữ nguyên đoạn này của bạn vì nó đang viết đúng)
         WebElement row = wait.until(ExpectedConditions.visibilityOfElementLocated(
                 By.xpath("//table//tbody//tr[td[contains(normalize-space(), '" + MA_PHIEU_MUON + "')]]")
         ));
@@ -123,13 +118,11 @@ public class timKiemTraSachTest {
 
         timKiem(TEN_NGUOI_MUON);
 
-        // SỬA CHỖ NÀY: Dùng By.tagName("table") thay vì By.id("loan-table")
         wait.until(ExpectedConditions.textToBePresentInElementLocated(
                 By.tagName("table"),
                 TEN_NGUOI_MUON
         ));
 
-        // Lấy dòng dữ liệu (Giữ nguyên đoạn này của bạn vì nó đang viết đúng)
         WebElement row = wait.until(ExpectedConditions.visibilityOfElementLocated(
                 By.xpath("//table//tbody//tr[td[contains(normalize-space(), '" + TEN_NGUOI_MUON + "')]]")
         ));
@@ -146,11 +139,9 @@ public class timKiemTraSachTest {
     public void TS_F003_timKiemKhongThanhCongBangTenHoacMa() {
 
         timKiem(TU_KHOA_KHONG_TON_TAI);
-
-        // SỬA CHỖ NÀY: Dùng By.tagName("table") thay vì By.id("loan-table")
         try {
             System.out.println("🔍 Đang tìm kiếm từ khóa không tồn tại: " + TU_KHOA_KHONG_TON_TAI);
-            Thread.sleep(3000); // Đợi 3 giây rồi mới chạy tiếp các lệnh dưới
+            Thread.sleep(3000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -188,21 +179,13 @@ public class timKiemTraSachTest {
             }
             return null;
         });
-
-        // ===== NHẬP =====
-        searchInput.click();   // ⚠️ rất quan trọng (UI custom)
         searchInput.clear();
         searchInput.sendKeys(tuKhoa);
-
-        // ===== CLICK BUTTON =====
         WebElement btnSearch = wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath("//button[@onclick='performSearch()']")
         ));
-        // scroll + click JS (tránh bị che)
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", btnSearch);
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnSearch);
-
-        // ===== CHỜ LOAD =====
         wait.until(ExpectedConditions.or(
                 ExpectedConditions.presenceOfElementLocated(By.xpath("//table//tr")),
                 ExpectedConditions.presenceOfElementLocated(By.xpath("//*[contains(text(),'Không tìm thấy')]")),
