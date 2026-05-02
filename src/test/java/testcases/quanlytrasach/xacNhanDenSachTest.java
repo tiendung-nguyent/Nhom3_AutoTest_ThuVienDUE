@@ -104,7 +104,7 @@ public class xacNhanDenSachTest {
     }
 
     @Test
-    public void PA_24_KiemTraHienThiHoSoDenSach() {
+    public void PA_24() {
         clickByJS(By.xpath("//span[contains(text(),'Trả sách')]"));
 
         WebElement tabDenSach = wait.until(
@@ -128,7 +128,7 @@ public class xacNhanDenSachTest {
 
 
     @Test
-    public void PA_25_KiemTraPopupXacNhanNgauNhien() {
+    public void PA_25() {
 
         clickByJS(By.xpath("//span[contains(text(),'Trả sách')]"));
 
@@ -186,7 +186,7 @@ public class xacNhanDenSachTest {
 
 
     @Test
-    public void PA_26_XacNhanDenSachThanhCongNgauNhien() {
+    public void PA_26() {
         clickByJS(By.xpath("//span[contains(text(),'Trả sách')]"));
 
         WebElement tabDenSach = wait.until(ExpectedConditions.elementToBeClickable(
