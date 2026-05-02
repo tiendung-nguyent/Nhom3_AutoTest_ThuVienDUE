@@ -39,7 +39,7 @@ public class giaHanPhieuMuonTest {
 
         sidebarPage.gotoBorrow();
 
-        muonSachPage.clickGiaHanDauTien();
+        muonSachPage.clickGiaHanTheoTrangThai("Đang mượn");
 
         muonSachPage.enterNgayGiaHanMoiTuDong();
 
