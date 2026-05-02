@@ -697,10 +697,8 @@ public class XacNhanTraSachTest {
                 MUC_HU_HONG_NHE,
                 "Rách bìa"
         );
-
         assertFineCreatedInPaymentTab(loanId, LOAI_PHAT_HU_HONG);
     }
-
     @Test
     public void TC_TS_07_traSachQuaHanVaHuHong() {
         WebElement row = findOverdueRow();
