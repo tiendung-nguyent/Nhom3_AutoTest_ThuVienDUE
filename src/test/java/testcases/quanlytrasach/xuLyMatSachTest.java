@@ -915,67 +915,64 @@ public class xuLyMatSachTest {
     }
 
     @Test
-    public void TC_MS_08_KhongChonPhuongAn_KhongDuocLuu() {
-
-        // 1. Mở tab xử lý mất sách
+    public void TC_MS_08_KhongChonPhuongAn_Huy_DuLieuConNguyen() {
+        // 1. Mở tab Xử lý mất sách
         clickByJS(By.xpath("//span[contains(text(),'Trả sách')]"));
         clickByJS(By.xpath("//button[contains(@onclick,'tab-3')]"));
 
-        // 2. chọn 1 bản ghi hợp lệ
+        // 2. Tìm một bản ghi có nút "Báo mất"
         List<WebElement> rows = wait.until(
                 ExpectedConditions.presenceOfAllElementsLocatedBy(
                         By.xpath("//tr[contains(@class,'lost-record') and .//button[contains(@class,'lost-report-trigger')]]")
                 )
         );
 
-        Assert.assertFalse(rows.isEmpty(), "Không có dữ liệu test");
+        Assert.assertFalse(rows.isEmpty(), "❌ Không có dữ liệu để thực hiện test!");
 
         WebElement row = rows.get(0);
+        // Lấy ID hoặc Mã phiếu để kiểm tra sau khi hủy
+        String maPhieuTruoc = row.findElement(By.xpath("./td[1]")).getText().trim();
+        String trangThaiTruoc = row.findElement(By.xpath(".//span[contains(@class,'badge')]|./td[6]")).getText().trim();
 
-        // 3. mở form
-        WebElement btn = row.findElement(By.className("lost-report-trigger"));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btn);
+        System.out.println("🎯 Test với phiếu: " + maPhieuTruoc + " | Trạng thái: " + trangThaiTruoc);
 
+        // 3. Nhấn nút "Báo mất" để mở popup
+        WebElement btnBaoMat = row.findElement(By.className("lost-report-trigger"));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnBaoMat);
+
+        // 4. Đợi popup hiển thị
         WebElement modal = wait.until(
                 ExpectedConditions.visibilityOfElementLocated(By.id("popup-lost-book"))
         );
+        Assert.assertTrue(modal.isDisplayed(), "❌ Popup xử lý mất sách không hiển thị!");
 
-        // 4. nhập ngày
-        WebElement date = modal.findElement(By.xpath(".//input[@type='date']"));
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].value=arguments[1];",
-                date,
-                java.time.LocalDate.now().toString()
+        // 5. Điền một số thông tin giả (Ghi chú) nhưng không chọn phương án bồi hoàn
+        modal.findElement(By.id("lostNote")).sendKeys("Dữ liệu tạm thời để test nút Hủy");
+
+        // 6. Nhấn nút "Hủy" (Sử dụng button có onclick="closeAllPopups()")
+        WebElement btnHuy = modal.findElement(
+                By.xpath(".//button[contains(@onclick,'closeAllPopups') and contains(text(),'Hủy')]")
         );
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnHuy);
 
-        // 5. KHÔNG chọn phương án bồi hoàn (quan trọng)
+        // 7. Kiểm tra kết quả: Popup phải đóng và dữ liệu không đổi
+        // Chờ modal biến mất
+        boolean isModalClosed = wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("popup-lost-book")));
+        Assert.assertTrue(isModalClosed, "❌ Popup vẫn còn hiển thị sau khi nhấn Hủy!");
 
-        // 6. bấm xác nhận
-        WebElement btnConfirm = modal.findElement(
-                By.xpath(".//button[contains(@onclick,'submitLostBookReport')]")
-        );
+        // Tìm lại dòng đó trong bảng
+        WebElement rowSau = driver.findElement(By.xpath("//tr[contains(@class,'lost-record')][td[1][normalize-space()='" + maPhieuTruoc + "']]"));
+        String trangThaiSau = rowSau.findElement(By.xpath(".//span[contains(@class,'badge')]|./td[6]")).getText().trim();
 
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnConfirm);
+        System.out.println("📊 Trạng thái sau khi Hủy: " + trangThaiSau);
 
-        // 7. check lỗi hoặc modal không đóng
-        boolean hasError = false;
+        // Xác nhận trạng thái không hề thay đổi
+        Assert.assertEquals(trangThaiSau, trangThaiTruoc, "❌ Lỗi: Trạng thái bản ghi bị thay đổi dù đã nhấn Hủy!");
 
-        try {
-            WebElement error = wait.until(
-                    ExpectedConditions.visibilityOfElementLocated(
-                            By.xpath("//*[contains(text(),'Vui lòng chọn phương án bồi hoàn')]")
-                    )
-            );
-            hasError = true;
-            System.out.println("✔ Có lỗi: " + error.getText());
-        } catch (Exception e) {
-            // fallback
-        }
+        // Xác nhận nút Báo mất vẫn còn đó (không bị biến mất)
+        Assert.assertTrue(rowSau.findElement(By.className("lost-report-trigger")).isDisplayed(), "❌ Nút Báo mất bị biến mất sau khi hủy thao tác!");
 
-        boolean modalStillOpen = driver.findElement(By.id("popup-lost-book")).isDisplayed();
-
-        Assert.assertTrue(hasError || modalStillOpen,
-                "❌ Hệ thống vẫn cho submit dù chưa chọn phương án");
+        System.out.println("✅ Pass: Nhấn Hủy thành công, dữ liệu bản ghi vẫn giữ nguyên.");
     }
 
     @Test
@@ -1090,7 +1087,6 @@ public class xuLyMatSachTest {
             );
         }
 
-        // 7. Reload lại đúng bản ghi để đảm bảo trạng thái không đổi
         driver.navigate().refresh();
 
         clickByJS(By.xpath("//span[contains(text(),'Trả sách')]"));

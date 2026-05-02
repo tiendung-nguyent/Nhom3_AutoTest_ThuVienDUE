@@ -501,7 +501,7 @@ public class thanhToanPhiPhatTest {
     // TEST CASES
     // =========================
 
-    @Test(priority = 1)
+    @Test()
     public void TC_TP_01_hienThiDanhSachPhiPhatNguoiDung() {
         assertPaymentTabDisplayed();
 
@@ -520,7 +520,7 @@ public class thanhToanPhiPhatTest {
         }
     }
 
-    @Test(priority = 2)
+    @Test()
     public void TC_TP_02_moPopupChiTietPhiPhat() {
         WebElement row = findMixedStatusFineRow();
 
@@ -542,7 +542,7 @@ public class thanhToanPhiPhatTest {
         assertPopupTotalOnlyIncludesUnpaidFines();
     }
 
-    @Test(priority = 3)
+    @Test()
     public void TC_TP_03_loiChuaChonPhuongThucThanhToan() {
         WebElement row = findUnpaidFineRow();
 
@@ -578,7 +578,7 @@ public class thanhToanPhiPhatTest {
         );
     }
 
-    @Test(priority = 4)
+    @Test()
     public void TC_TP_04_thanhToanPhiPhatThanhCong() {
         WebElement row = findUnpaidFineRow();
 
@@ -653,7 +653,7 @@ public class thanhToanPhiPhatTest {
         );
     }
 
-    @Test(priority = 5)
+    @Test()
     public void TC_TP_05_huyThanhToanPhiPhat() {
         WebElement row = findUnpaidFineRow();
 
@@ -702,7 +702,7 @@ public class thanhToanPhiPhatTest {
         );
     }
 
-    @Test(priority = 6)
+    @Test()
     public void TC_TP_06_xemChiTietNguoiDungDaThanhToanHet() {
         WebElement row;
 
