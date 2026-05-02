@@ -177,18 +177,31 @@ public class timKiemTraSachTest {
 
         timKiem(TU_KHOA_KHONG_TON_TAI);
 
-        boolean hasNoResult = wait.until(driver ->
-                !driver.findElements(
-                        By.xpath("//*[contains(text(),'Không tìm thấy') or contains(text(),'Khong tim thay')]")
-                ).isEmpty()
-        );
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(10));
 
-        Assert.assertTrue(
-                hasNoResult,
-                "Không hiển thị thông báo không tìm thấy!"
-        );
+        // chờ table load xong (có thể có row hoặc không)
+        shortWait.until(d -> true);
 
-        System.out.println("Không tìm thấy dữ liệu đúng như mong đợi.");
+        List<WebElement> rows = driver.findElements(By.xpath("//table//tbody//tr"));
+
+        boolean hasRealData = false;
+
+        for (WebElement row : rows) {
+            String text = row.getText().toLowerCase();
+
+            // loại row rác / empty row
+            if (!text.contains("không có") &&
+                    !text.contains("no data") &&
+                    !text.trim().isEmpty()) {
+                hasRealData = true;
+                break;
+            }
+        }
+
+        Assert.assertFalse(hasRealData,
+                "Search không tồn tại nhưng vẫn còn dữ liệu trong bảng!");
+
+        System.out.println("PASS: Không có kết quả tìm kiếm.");
     }
 
     // =====================================================

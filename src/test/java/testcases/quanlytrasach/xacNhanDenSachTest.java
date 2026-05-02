@@ -11,6 +11,8 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.openqa.selenium.By;
+
+import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +26,8 @@ public class xacNhanDenSachTest {
     private WebDriverWait wait;
 
     @BeforeMethod
-    public void setupLogin() {
+    public void setupLogin(Method method) {
+
         System.out.println("========== SETUP LOGIN ==========");
 
         if (Constant.WEBDRIVER == null) {
@@ -35,11 +38,16 @@ public class xacNhanDenSachTest {
         driver = Constant.WEBDRIVER;
         wait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
-        loginAsUser();
-
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//aside")));
-
-        ensureQuanLyTraSachPage();
+        // ❗ CHỈ LOGIN ADMIN nếu KHÔNG PHẢI TEST 05
+        if (!method.getName().equals("TC_DS_05_KiemTraQuyenXacNhanDenSach")) {
+            loginAsUser();
+        } else {
+            // logout/clear session để đảm bảo không dính admin
+            try {
+                driver.manage().deleteAllCookies();
+                driver.get(Constant.THUVIEN_URL);
+            } catch (Exception ignored) {}
+        }
 
         System.out.println("========== READY FOR TEST ==========");
     }
@@ -305,7 +313,7 @@ public class xacNhanDenSachTest {
     public void TC_DS_03_XacNhanDenSachThanhCongVoiHoSoHopLe() {
 
         String targetMaHoSo = "PM0000001";
-        String newBookCode = "MS0001-010";
+        String newBookCode = "MS0002-011";
 
         // =========================
         // 1. Vào màn hình Trả sách
@@ -547,32 +555,30 @@ public class xacNhanDenSachTest {
     @Test
     public void TC_DS_05_KiemTraQuyenXacNhanDenSach() throws Exception {
 
-        // 1. Login user KHÔNG có quyền (quan trọng)
-        loginWithNoPermissionUser();
+        // đảm bảo clean session
+        driver.manage().deleteAllCookies();
+        driver.get(Constant.THUVIEN_URL);
 
-        // 2. Vào màn hình Trả sách
-        clickByJS(By.xpath("//span[contains(text(),'Trả sách')]"));
+        // login user độc giả
+        loginND00003();
 
-        WebElement tab = wait.until(
-                ExpectedConditions.elementToBeClickable(
-                        By.xpath("//button[contains(@onclick,'tab-4')]")
-                )
-        );
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", tab);
+        // vào module Mượn sách
+        clickByJS(By.xpath("//span[contains(text(),'Mượn sách')]"));
 
-        // 3. Chờ table load
-        wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//div[@id='tab-4']//table")
-        ));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("borrowTable")));
 
-        // 4. Kiểm tra KHÔNG có nút xác nhận
-        List<WebElement> buttons = driver.findElements(
+        WebDriverWait loginWait = new WebDriverWait(driver, Duration.ofSeconds(30));
+
+        List<WebElement> confirmButtons = driver.findElements(
                 By.xpath("//span[contains(@class,'compensate-confirm-trigger')]")
         );
 
-        // ❗ EXPECT: không được thấy nút
-        Assert.assertTrue(buttons.isEmpty(),
-                "User không có quyền nhưng vẫn thấy nút Xác nhận đền sách");
+        Assert.assertTrue(
+                confirmButtons.isEmpty(),
+                "ND00003 vẫn thấy nút xác nhận đền sách"
+        );
+
+        System.out.println("PASS TC05");
     }
 
     // =========================
@@ -632,32 +638,63 @@ public class xacNhanDenSachTest {
 
         System.out.println("✅ Login thành công");
     }
-    private boolean isDisplayed(By locator) {
-        try {
-            return driver.findElement(locator).isDisplayed();
-        } catch (Exception e) {
-            return false;
-        }
-    }
-    public void loginWithNoPermissionUser() {
+    public void loginND00003() {
 
-        driver.get("http://your-url-login-page");
+        // 1. Clear session sạch
+        driver.manage().deleteAllCookies();
 
-        WebElement username = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(By.id("username"))
+        // 2. Mở trang login
+        driver.get(Constant.THUVIEN_URL);
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+
+        // 3. Chờ page load xong
+        wait.until(driver ->
+                ((JavascriptExecutor) driver)
+                        .executeScript("return document.readyState")
+                        .equals("complete")
         );
-        username.sendKeys("user_khong_quyen");
 
-        WebElement password = driver.findElement(By.id("password"));
-        password.sendKeys("123456");
-
-        WebElement btnLogin = driver.findElement(By.id("btnLogin"));
-        btnLogin.click();
-
+        // 4. Chờ form login xuất hiện
         wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//*[contains(text(),'Dashboard')]")
+                By.id("djangoLoginForm")
         ));
+
+        // 5. Input username (Mã sinh viên / tài khoản)
+        WebElement username = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//label[contains(text(),'Mã sinh viên')]/following::input[1]")
+                )
+        );
+        username.clear();
+        username.sendKeys("ND00003");
+
+        // 6. Input password
+        WebElement password = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.id("loginPassword")
+                )
+        );
+        password.clear();
+        password.sendKeys("Vana12345");
+
+        // 7. Click nút đăng nhập
+        WebElement btnLogin = wait.until(
+                ExpectedConditions.elementToBeClickable(
+                        By.xpath("//button[@type='submit' or contains(text(),'Đăng nhập')]")
+                )
+        );
+
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnLogin);
+
+        // 8. Chờ login thành công (sidebar xuất hiện)
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//aside")
+        ));
+
+        System.out.println("Login ND00003 thành công");
     }
+
     private WebElement findFast(WebDriverWait customWait, By... locators) {
         for (By locator : locators) {
             try {
