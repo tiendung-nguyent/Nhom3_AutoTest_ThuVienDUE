@@ -180,7 +180,7 @@ public class quanLyMuonSachPage extends GeneralPage {
     }
     public void enterNgayGiaHanMoiTuDong() {
         try {
-            By ngayMuonLocator = By.cssSelector("#borrowTableBody tr:first-child td:nth-child(4)");
+            By ngayMuonLocator = By.cssSelector("#borrowTableBody tr:first-child td:nth-child(5)");
             String ngayMuonText = Constant.WEBDRIVER.findElement(ngayMuonLocator).getText().trim();
 
             DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
