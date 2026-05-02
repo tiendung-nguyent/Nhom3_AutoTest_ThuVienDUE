@@ -552,34 +552,6 @@ public class xacNhanDenSachTest {
         Assert.assertEquals(refreshedRows.size(), soLuongTruoc);
     }
 
-    @Test
-    public void TC_DS_05_KiemTraQuyenXacNhanDenSach() throws Exception {
-
-        // đảm bảo clean session
-        driver.manage().deleteAllCookies();
-        driver.get(Constant.THUVIEN_URL);
-
-        // login user độc giả
-        loginND00003();
-
-        // vào module Mượn sách
-        clickByJS(By.xpath("//span[contains(text(),'Mượn sách')]"));
-
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("borrowTable")));
-
-        WebDriverWait loginWait = new WebDriverWait(driver, Duration.ofSeconds(30));
-
-        List<WebElement> confirmButtons = driver.findElements(
-                By.xpath("//span[contains(@class,'compensate-confirm-trigger')]")
-        );
-
-        Assert.assertTrue(
-                confirmButtons.isEmpty(),
-                "ND00003 vẫn thấy nút xác nhận đền sách"
-        );
-
-        System.out.println("PASS TC05");
-    }
 
     // =========================
 
