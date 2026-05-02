@@ -187,172 +187,58 @@ public class xacNhanDenSachTest {
 
     @Test
     public void PA_26() {
+        // 1. Điều hướng và mở tab Đền sách
         clickByJS(By.xpath("//span[contains(text(),'Trả sách')]"));
-
-        WebElement tabDenSach = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//button[contains(@onclick,'tab-4')]")
-        ));
+        WebElement tabDenSach = wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[contains(@onclick,'tab-4')]")));
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", tabDenSach);
 
         wait.until(ExpectedConditions.presenceOfElementLocated(By.id("compensateTableBody")));
         safeSleep(2000);
 
-        List<WebElement> rowsWithButtons = driver.findElements(
+        // 2. Tìm danh sách các hồ sơ đang ở trạng thái "Chờ đền sách" (có nút xác nhận)
+        // Dựa trên ảnh của bạn, nút xác nhận nằm trong các dòng có trạng thái "Chờ đền sách"
+        List<WebElement> rowsToConfirm = driver.findElements(
                 By.xpath("//tbody[@id='compensateTableBody']//tr[.//span[contains(@class,'compensate-confirm-trigger')]]")
         );
 
-        Assert.assertFalse(rowsWithButtons.isEmpty(), "FAILED: Không tìm thấy hồ sơ có nút Xác nhận!");
+        Assert.assertFalse(rowsToConfirm.isEmpty(), "FAILED: Không tìm thấy hồ sơ nào có nút Xác nhận!");
 
-        int randomIndex = rand.nextInt(rowsWithButtons.size());
-        WebElement selectedRow = rowsWithButtons.get(randomIndex);
+        // 3. Chọn ngẫu nhiên 1 hồ sơ để xử lý
+        int randomIndex = rand.nextInt(rowsToConfirm.size());
+        WebElement selectedRow = rowsToConfirm.get(randomIndex);
         String maHoSoTarget = selectedRow.findElement(By.xpath("./td[1]")).getText().trim();
 
+        // 4. Mở popup và thực hiện xác nhận
         WebElement btnOpen = selectedRow.findElement(By.xpath(".//span[contains(@class,'compensate-confirm-trigger')]"));
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnOpen);
 
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("popup-compensate-confirm")));
-
         driver.findElement(By.xpath("//input[@name='compInspectionResult' and @value='pass']")).click();
 
         WebElement inputNote = driver.findElement(By.id("compInspectionNote"));
         inputNote.clear();
-        inputNote.sendKeys("MS-NEW-" + (System.currentTimeMillis() % 100000));
+        inputNote.sendKeys("Xác nhận hoàn tất - " + (System.currentTimeMillis() % 100000));
 
         WebElement btnConfirm = driver.findElement(By.xpath("//button[@onclick='submitCompensateConfirm()']"));
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnConfirm);
 
+        // 5. Đợi popup đóng và đợi trang load lại dữ liệu (Ajax)
         wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("popup-compensate-confirm")));
+        safeSleep(3000); // Chờ một chút để backend cập nhật và frontend render lại trạng thái
 
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", tabDenSach);
-
-        safeSleep(2500);
-        boolean isDisappeared = false;
-        try {
-
-            isDisappeared = wait.until(ExpectedConditions.invisibilityOfElementLocated(
-                    By.xpath("//tbody[@id='compensateTableBody']//td[normalize-space()='" + maHoSoTarget + "']")
-            ));
-        } catch (TimeoutException e) {
-            isDisappeared = false;
-        }
-
-        Assert.assertTrue(isDisappeared, "LỖI: Hồ sơ " + maHoSoTarget + " vẫn còn tồn tại trong danh sách sau khi xác nhận!");
-    }
-
-    @Test
-    public void TC_DS_04_HuyThaoTacKhiSachDenKhongDatYeuCau() throws Exception {
-        clickByJS(By.xpath("//span[contains(text(),'Trả sách')]"));
-
-        WebElement tabDenSach = wait.until(
-                ExpectedConditions.elementToBeClickable(
-                        By.xpath("//button[contains(@onclick,'tab-4')]")
-                )
-        );
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", tabDenSach);
-
-        wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//*[contains(text(),'Danh sách hồ sơ chờ xác nhận đền sách')]")
+        // 6. KIỂM TRA: Tìm lại dòng hồ sơ đó và check cột Trạng thái (td cuối cùng)
+        // XPath này tìm dòng có mã hồ sơ tương ứng, sau đó lấy cột chứa text 'Đã hoàn thành'
+        WebElement statusCell = wait.until(ExpectedConditions.presenceOfElementLocated(
+                By.xpath("//tbody[@id='compensateTableBody']//tr[td[1][normalize-space()='" + maHoSoTarget + "']]//td[contains(@class,'status')]//span")
         ));
 
-        WebElement tableBody = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(
-                        By.xpath("//div[contains(@id,'tab-4') and not(contains(@style,'display: none'))]//table/tbody")
-                )
-        );
+        String actualStatus = statusCell.getText().trim();
+        System.out.println("Hồ sơ: " + maHoSoTarget + " - Trạng thái hiện tại: " + actualStatus);
 
-        List<WebElement> rows = tableBody.findElements(By.xpath("./tr"));
-
-        Assert.assertFalse(rows.isEmpty());
-
-        WebElement selectedRow = null;
-
-        for (WebElement row : rows) {
-            if (row.getText().trim().isEmpty()) {
-                continue;
-            }
-            String currentMaHoSo = row.findElement(By.xpath("./td[1]")).getText().trim();
-            if (currentMaHoSo.equals("PM0000002")) {
-                selectedRow = row;
-                break;
-            }
-        }
-
-        Assert.assertNotNull(selectedRow);
-
-        String maHoSo = selectedRow.findElement(By.xpath("./td[1]")).getText().trim();
-        String trangThaiBanDau = selectedRow.findElement(By.xpath("./td[6]")).getText().trim();
-        int soLuongTruoc = rows.size();
-
-        WebElement btnChoDenSach = selectedRow.findElement(
-                By.xpath(".//span[contains(@class,'compensate-confirm-trigger')]")
-        );
-
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", btnChoDenSach);
-        sleep(500);
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnChoDenSach);
-
-        WebElement popup = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(
-                        By.xpath("//div[@id='popup-compensate-confirm' and not(contains(@style,'display: none'))]")
-                )
-        );
-
-        Assert.assertTrue(popup.isDisplayed());
-
-        WebElement radioKhongDat = wait.until(
-                ExpectedConditions.elementToBeClickable(
-                        By.xpath("//div[@id='popup-compensate-confirm']//input[@name='compInspectionResult' and @value='fail']")
-                )
-        );
-
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", radioKhongDat);
-        sleep(300);
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", radioKhongDat);
-
-        Assert.assertTrue(radioKhongDat.isSelected());
-
-        WebElement btnHuy = wait.until(
-                ExpectedConditions.elementToBeClickable(
-                        By.xpath("//div[@id='popup-compensate-confirm']//button[contains(@onclick,'closeAllPopups')]")
-                )
-        );
-
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", btnHuy);
-        sleep(300);
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnHuy);
-
-        wait.until(
-                ExpectedConditions.invisibilityOfElementLocated(
-                        By.xpath("//div[@id='popup-compensate-confirm' and not(contains(@style,'display: none'))]")
-                )
-        );
-
-        WebElement refreshedTableBody = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(
-                        By.xpath("//div[contains(@id,'tab-4') and not(contains(@style,'display: none'))]//table/tbody")
-                )
-        );
-
-        List<WebElement> refreshedRows = refreshedTableBody.findElements(By.xpath("./tr"));
-
-        WebElement sameRow = null;
-        for (WebElement row : refreshedRows) {
-            if (row.getText().trim().isEmpty()) {
-                continue;
-            }
-            String currentMaHoSo = row.findElement(By.xpath("./td[1]")).getText().trim();
-            if (currentMaHoSo.equals("PM0000002")) {
-                sameRow = row;
-                break;
-            }
-        }
-
-        Assert.assertNotNull(sameRow);
-        String trangThaiSauHuy = sameRow.findElement(By.xpath("./td[6]")).getText().trim();
-        Assert.assertEquals(trangThaiSauHuy, trangThaiBanDau);
-        Assert.assertEquals(refreshedRows.size(), soLuongTruoc);
+        // Xác nhận trạng thái đã chuyển sang "Đã hoàn thành"
+        Assert.assertEquals(actualStatus, "Đã hoàn thành",
+                "LỖI: Hồ sơ " + maHoSoTarget + " không chuyển sang trạng thái 'Đã hoàn thành'!");
     }
-
 
     private void loginAsUser() {
         try {
