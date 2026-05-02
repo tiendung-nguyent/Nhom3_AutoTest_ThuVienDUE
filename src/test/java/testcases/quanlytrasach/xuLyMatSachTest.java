@@ -107,45 +107,32 @@ public class xuLyMatSachTest {
 
     @Test
     public void PA_15() {
-        // 1. Vào tab Xử lý mất sách
-        clickByJS(By.xpath("//span[contains(text(),'Trả sách')]"));
-        WebElement tabXuLyMatSach = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//button[contains(@onclick,'tab-3')]")
+        WebElement menuTraSach = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//span[contains(text(),'Trả sách')]")
         ));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", tabXuLyMatSach);
+        menuTraSach.click();
 
-        // 2. Chờ bảng load
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.className("lost-record")));
-        safeSleep(2000);
+        WebElement tabXuLyMatSach = wait.until(ExpectedConditions.elementToBeClickable(
+                By.xpath("//button[@onclick[contains(.,'tab-3')]]")
+        ));
+        tabXuLyMatSach.click();
 
-        List<WebElement> rows = driver.findElements(By.className("lost-record"));
-
-        for (WebElement row : rows) {
-            String maPhieu = row.getAttribute("data-loan-id");
-            String statusAttr = row.getAttribute("data-status");
-            String isLostAttr = row.getAttribute("data-is-lost");
-
-            // Tìm nút
-            List<WebElement> btnList = row.findElements(By.xpath(".//button[contains(text(),'Báo mất')]"));
-            boolean isButtonDisplayed = !btnList.isEmpty() && btnList.get(0).isDisplayed();
-
-            // LOGIC LINH HOẠT: Thay Assert bằng in thông báo (Console)
-            if (isLostAttr != null && isLostAttr.equalsIgnoreCase("True")) {
-                if (isButtonDisplayed) {
-                    System.out.println("⚠️ CẢNH BÁO: Phiếu " + maPhieu + " đã báo mất nhưng nút vẫn hiện!");
-                }
-            }
-            else if (statusAttr != null && (statusAttr.contains("dang_muon") || statusAttr.contains("qua_han"))) {
-                if (!isButtonDisplayed) {
-                    // Thay vì văng lỗi Fail, mình chỉ in ra để bạn theo dõi
-                    System.out.println("ℹ️ CHÚ Ý: Phiếu " + maPhieu + " hợp lệ nhưng không thấy nút. Có thể do logic ẩn nút của thầy/cô.");
-                } else {
-                    System.out.println("✅ OK: Phiếu " + maPhieu + " hiện nút đúng quy định.");
-                }
-            }
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        // Ép Test Case luôn Pass để bạn xem được kết quả cuối cùng
-        Assert.assertTrue(true);
+
+        WebElement tableLabel = driver.findElement(By.xpath("//p[contains(@class,'section-label') and contains(text(),'Danh sách bản ghi mượn cần xử lý mất sách')]"));
+        List<WebElement> rows = driver.findElements(By.xpath("//table/tbody/tr[contains(@class, 'lost-record-row-group-start')]"));
+        for (WebElement row : rows) {
+            String maPhieu = row.findElement(By.xpath("./td[1]")).getText();
+            String trangThai = row.findElement(By.xpath("./td[6]")).getText();
+
+
+            boolean isHopLe = trangThai.contains("Đang mượn") || trangThai.contains("Quá hạn");
+            WebElement btnBaoMat = row.findElement(By.xpath(".//button[contains(text(),'Báo mất')]"));
+        }
     }
 
     @Test

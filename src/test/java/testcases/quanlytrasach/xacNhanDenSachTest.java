@@ -195,20 +195,16 @@ public class xacNhanDenSachTest {
         wait.until(ExpectedConditions.presenceOfElementLocated(By.id("compensateTableBody")));
         safeSleep(2000);
 
-        // 2. Tìm danh sách các hồ sơ đang ở trạng thái "Chờ đền sách" (có nút xác nhận)
-        // Dựa trên ảnh của bạn, nút xác nhận nằm trong các dòng có trạng thái "Chờ đền sách"
         List<WebElement> rowsToConfirm = driver.findElements(
                 By.xpath("//tbody[@id='compensateTableBody']//tr[.//span[contains(@class,'compensate-confirm-trigger')]]")
         );
 
         Assert.assertFalse(rowsToConfirm.isEmpty(), "FAILED: Không tìm thấy hồ sơ nào có nút Xác nhận!");
 
-        // 3. Chọn ngẫu nhiên 1 hồ sơ để xử lý
         int randomIndex = rand.nextInt(rowsToConfirm.size());
         WebElement selectedRow = rowsToConfirm.get(randomIndex);
         String maHoSoTarget = selectedRow.findElement(By.xpath("./td[1]")).getText().trim();
 
-        // 4. Mở popup và thực hiện xác nhận
         WebElement btnOpen = selectedRow.findElement(By.xpath(".//span[contains(@class,'compensate-confirm-trigger')]"));
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnOpen);
 
@@ -222,20 +218,13 @@ public class xacNhanDenSachTest {
         WebElement btnConfirm = driver.findElement(By.xpath("//button[@onclick='submitCompensateConfirm()']"));
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnConfirm);
 
-        // 5. Đợi popup đóng và đợi trang load lại dữ liệu (Ajax)
         wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("popup-compensate-confirm")));
-        safeSleep(3000); // Chờ một chút để backend cập nhật và frontend render lại trạng thái
-
-        // 6. KIỂM TRA: Tìm lại dòng hồ sơ đó và check cột Trạng thái (td cuối cùng)
-        // XPath này tìm dòng có mã hồ sơ tương ứng, sau đó lấy cột chứa text 'Đã hoàn thành'
-        WebElement statusCell = wait.until(ExpectedConditions.presenceOfElementLocated(
+        safeSleep(3000); WebElement statusCell = wait.until(ExpectedConditions.presenceOfElementLocated(
                 By.xpath("//tbody[@id='compensateTableBody']//tr[td[1][normalize-space()='" + maHoSoTarget + "']]//td[contains(@class,'status')]//span")
         ));
 
         String actualStatus = statusCell.getText().trim();
         System.out.println("Hồ sơ: " + maHoSoTarget + " - Trạng thái hiện tại: " + actualStatus);
-
-        // Xác nhận trạng thái đã chuyển sang "Đã hoàn thành"
         Assert.assertEquals(actualStatus, "Đã hoàn thành",
                 "LỖI: Hồ sơ " + maHoSoTarget + " không chuyển sang trạng thái 'Đã hoàn thành'!");
     }
