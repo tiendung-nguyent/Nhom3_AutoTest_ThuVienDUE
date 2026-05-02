@@ -188,7 +188,6 @@ public class quanLyMuonSachPage extends GeneralPage {
             LocalDate ngayGiaHanMoi = ngayMuonDate.plusDays(30);
 
             String strNgayMoi = ngayGiaHanMoi.format(DateTimeFormatter.ofPattern("MMddyyyy"));
-
             By txtNgayMoi = By.id("extLgNewDue");
             WebElement input = Constant.WEBDRIVER.findElement(txtNgayMoi);
             this.scrollToElement(txtNgayMoi);
