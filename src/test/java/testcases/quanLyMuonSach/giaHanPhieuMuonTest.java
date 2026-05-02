@@ -33,7 +33,7 @@ public class giaHanPhieuMuonTest {
     }
 
     @Test
-    public void BR_G001() {
+    public void BR_07() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
 
@@ -49,8 +49,25 @@ public class giaHanPhieuMuonTest {
         String actualError = muonSachPage.getToastMessage();
         Assert.assertEquals(actualError, expectedError);
     }
+    @Test
+    public void BR_08() {
+        SidebarPage sidebarPage = new SidebarPage();
+        quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
+
+        sidebarPage.gotoBorrow();
+
+        muonSachPage.clickGiaHanTheoTrangThai("Quá hạn");
+
+        muonSachPage.enterNgayGiaHanMoiTuDong();
+
+        muonSachPage.clickLuuThayDoiGiaHan();
+
+        String expectedError = "Sách đã quá hạn trả, không thể gia hạn. Vui lòng thực hiện trả sách và thanh toán phí phạt nếu có.";
+        String actualError = muonSachPage.getToastMessage();
+        Assert.assertEquals(actualError, expectedError);
+    }
     @Test()
-    public void BR_G002() {
+    public void BR_09() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
 
@@ -73,7 +90,7 @@ public class giaHanPhieuMuonTest {
 
     }
     @Test
-    public void BR_G003() {
+    public void BR_10() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
 
@@ -86,7 +103,7 @@ public class giaHanPhieuMuonTest {
         muonSachPage.clickLuuThayDoiGiaHan();
 
 
-        String expectedMsg = "Ngày gia hạn mới không thể nhỏ hơn ngày mượn";
+        String expectedMsg = "Ngày gia hạn mới phải lớn hơn hạn trả hiện tại.";
         String actualMsg = muonSachPage.getToastMessage();
 
         Assert.assertEquals(actualMsg, expectedMsg, "LỖI: Thông báo bắt lỗi ngày không đúng!");

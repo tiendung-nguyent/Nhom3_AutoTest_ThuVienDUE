@@ -502,7 +502,7 @@ public class thanhToanPhiPhatTest {
     // =========================
 
     @Test()
-    public void TC_TP_01_hienThiDanhSachPhiPhatNguoiDung() {
+    public void PA_09() {
         assertPaymentTabDisplayed();
 
         List<WebElement> rows = getFineRows();
@@ -521,7 +521,7 @@ public class thanhToanPhiPhatTest {
     }
 
     @Test()
-    public void TC_TP_02_moPopupChiTietPhiPhat() {
+    public void PA_10() {
         WebElement row = findMixedStatusFineRow();
 
         openChiTietPhiPhat(row);
@@ -543,7 +543,7 @@ public class thanhToanPhiPhatTest {
     }
 
     @Test()
-    public void TC_TP_03_loiChuaChonPhuongThucThanhToan() {
+    public void PA_11() {
         WebElement row = findUnpaidFineRow();
 
         openChiTietPhiPhat(row);
@@ -579,7 +579,7 @@ public class thanhToanPhiPhatTest {
     }
 
     @Test()
-    public void TC_TP_04_thanhToanPhiPhatThanhCong() {
+    public void PA_12() {
         WebElement row = findUnpaidFineRow();
 
         String tenNguoiDung = getTenNguoiDung(row);
@@ -654,7 +654,7 @@ public class thanhToanPhiPhatTest {
     }
 
     @Test()
-    public void TC_TP_05_huyThanhToanPhiPhat() {
+    public void PA_13() {
         WebElement row = findUnpaidFineRow();
 
         String tenNguoiDung = getTenNguoiDung(row);
@@ -703,7 +703,7 @@ public class thanhToanPhiPhatTest {
     }
 
     @Test()
-    public void TC_TP_06_xemChiTietNguoiDungDaThanhToanHet() {
+    public void PA_14() {
         WebElement row;
 
         if (paidUserNameAfterPayment != null && !paidUserNameAfterPayment.trim().isEmpty()) {

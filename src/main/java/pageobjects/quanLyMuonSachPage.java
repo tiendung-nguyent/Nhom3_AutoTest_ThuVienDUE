@@ -288,7 +288,21 @@ public class quanLyMuonSachPage extends GeneralPage {
             return true;
         }
     }
+    public void clickGiaHanTheoTrangThai(String trangThai) {
 
+        By btnGiaHanLocator = By.xpath("//tbody[@id='borrowTableBody']//tr[td[6]//span[contains(normalize-space(.), '" + trangThai + "')]]//button[contains(@class, 'btn-edit')]");
+
+        try {
+            WebDriverWait wait = new WebDriverWait(Constant.WEBDRIVER, Duration.ofSeconds(10));
+            WebElement btnGiaHan = wait.until(ExpectedConditions.elementToBeClickable(btnGiaHanLocator));
+
+            this.scrollToElement(btnGiaHanLocator);
+            btnGiaHan.click();
+            System.out.println("Đã click nút Gia hạn của phiếu '" + trangThai + "' thành công.");
+        } catch (Exception e) {
+            throw new RuntimeException("LỖI: Không tìm thấy nút Gia hạn của phiếu mượn trạng thái '" + trangThai + "'!");
+        }
+    }
     public void enterNgayGiaHanNhoHonNgayMuon() {
         try {
             By ngayMuonLocator = By.cssSelector("#borrowTableBody tr:first-child td:nth-child(4)");

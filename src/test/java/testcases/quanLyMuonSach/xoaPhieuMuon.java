@@ -33,7 +33,7 @@ public class xoaPhieuMuon {
     }
 
     @Test()
-    public void BR_X001() {
+    public void BR_11() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
 
@@ -57,7 +57,7 @@ public class xoaPhieuMuon {
         System.out.println("Test Xóa Phiếu Mượn PASS: Dữ liệu đã biến mất hoàn toàn!");
     }
     @Test()
-    public void BR_X002() {
+    public void BR_12() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
 
@@ -76,32 +76,26 @@ public class xoaPhieuMuon {
         System.out.println("Test BR_X002 PASS: Hộp thoại xác nhận hiển thị đúng nội dung yêu cầu!");
     }
     @Test()
-    public void BR_X003() {
+    public void BR_13() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
 
         sidebarPage.gotoBorrow();
 
-        // 1. Nhấn nút Xóa tại một dòng phiếu mượn
-        // Đồng thời lưu lại mã phiếu để lát nữa kiểm tra xem nó có bị mất không
         String maPhieuDangThaoTac = muonSachPage.clickXoaPhieuMuonDauTien();
 
-        // 2. Chọn "Hủy" trên hộp thoại xác nhận
         muonSachPage.clickHuyPopupXoa();
 
-        // --- KIỂM CHỨNG (ASSERTIONS) ---
 
-        // Kiểm tra 1: Hộp thoại đã đóng lại
         Assert.assertTrue(muonSachPage.isPopupXoaClosed(), "LỖI: Hộp thoại xác nhận xóa vẫn chưa đóng!");
 
-        // Kiểm tra 2: Phiếu mượn vẫn tồn tại trong danh sách, không bị xóa
         boolean isTonTai = muonSachPage.isPhieuMuonTonTai(maPhieuDangThaoTac);
         Assert.assertTrue(isTonTai, "LỖI: Đã nhấn Hủy nhưng phiếu mượn " + maPhieuDangThaoTac + " lại bị biến mất khỏi danh sách!");
 
         System.out.println("Test BR_X003 PASS: Tính năng Hủy Xóa hoạt động hoàn hảo, dữ liệu được bảo toàn!");
     }
     @Test()
-    public void BR_X004() {
+    public void BR_14() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
 
@@ -123,7 +117,7 @@ public class xoaPhieuMuon {
 
     }
     @Test()
-    public void BR_X005() {
+    public void BR_15() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
         sidebarPage.gotoUsers();

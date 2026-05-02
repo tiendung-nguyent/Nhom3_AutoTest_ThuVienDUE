@@ -605,7 +605,7 @@ public class XacNhanTraSachTest {
     // =========================
 
     @Test
-    public void TC_TS_01_hienThiDanhSachXacNhanTra() {
+    public void PA_01() {
         List<WebElement> rows = traSachPage.getRowsMuon();
 
         Assert.assertFalse(rows.isEmpty(), "Danh sách xác nhận trả không được rỗng");
@@ -629,7 +629,7 @@ public class XacNhanTraSachTest {
     }
 
     @Test
-    public void TC_TS_02_moPopupXacNhanTra() {
+    public void PA_02() {
         WebElement row = findValidReturnRow();
 
         openPopupXacNhanTra(row);
@@ -637,7 +637,7 @@ public class XacNhanTraSachTest {
     }
 
     @Test
-    public void TC_TS_03_loiChuaChonTinhTrangSach() {
+    public void PA_03() {
         WebElement row = findValidReturnRow();
 
         openPopupXacNhanTra(row);
@@ -651,7 +651,7 @@ public class XacNhanTraSachTest {
     }
 
     @Test
-    public void TC_TS_04_traSachDungHanTinhTrangTot() {
+    public void PA_04() {
         WebElement row = taoPhieuMuonVaLayDongXacNhanTra();
 
         String loanId = row.getAttribute("data-loan-id");
@@ -666,7 +666,7 @@ public class XacNhanTraSachTest {
     }
 
     @Test
-    public void TC_TS_05_traSachQuaHan() {
+    public void PA_05() {
         WebElement row = findOverdueRow();
         String loanId = row.getAttribute("data-loan-id");
 
@@ -688,7 +688,7 @@ public class XacNhanTraSachTest {
     }
 
     @Test
-    public void TC_TS_06_traSachHuHong() {
+    public void PA_06() {
         WebElement row = taoPhieuMuonVaLayDongXacNhanTra();
         String loanId = row.getAttribute("data-loan-id");
 
@@ -700,7 +700,7 @@ public class XacNhanTraSachTest {
         assertFineCreatedInPaymentTab(loanId, LOAI_PHAT_HU_HONG);
     }
     @Test
-    public void TC_TS_07_traSachQuaHanVaHuHong() {
+    public void PA_07() {
         WebElement row = findOverdueRow();
         String loanId = row.getAttribute("data-loan-id");
         String nguoiMuon = row.getAttribute("data-borrower");
@@ -721,7 +721,7 @@ public class XacNhanTraSachTest {
     }
 
     @Test
-    public void TC_TS_08_huyXacNhanTraSach() {
+    public void PA_08() {
         WebElement row = findValidReturnRow();
 
         String loanId = row.getAttribute("data-loan-id");
