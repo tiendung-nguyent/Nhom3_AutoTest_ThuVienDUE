@@ -7,13 +7,12 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
 import org.testng.annotations.*;
+import java.util.Random;
 
 import java.time.Duration;
 import java.util.List;
 
 public class timKiemTraSachTest {
-
-    private static final String MA_PHIEU_MUON = "PM0000001";
     private static final String TEN_NGUOI_MUON = "Nguyễn Văn A";
     private static final String TU_KHOA_KHONG_TON_TAI = "Trần Văn Z";
 
@@ -42,19 +41,12 @@ public class timKiemTraSachTest {
         System.out.println("========== LOGIN THÀNH CÔNG ==========");
     }
 
-    // =====================================================
-    // MỖI TEST CHỈ CẦN VÀO LẠI TRANG QUẢN LÝ TRẢ SÁCH
-    // KHÔNG LOGIN LẠI
-    // =====================================================
     @BeforeMethod
     public void goToReturnPageBeforeEachTest() {
         System.out.println("========== VÀO QUẢN LÝ TRẢ SÁCH ==========");
         goToQuanLyTraSach();
     }
 
-    // =====================================================
-    // ĐÓNG TRÌNH DUYỆT SAU KHI CHẠY XONG TOÀN BỘ
-    // =====================================================
     @AfterClass
     public void tearDown() {
         if (Constant.WEBDRIVER != null) {
@@ -63,9 +55,6 @@ public class timKiemTraSachTest {
         }
     }
 
-    // =====================================================
-    // LOGIN
-    // =====================================================
     private void loginAsUser() {
         driver.get(Constant.THUVIEN_URL);
 
@@ -97,9 +86,6 @@ public class timKiemTraSachTest {
         ));
     }
 
-    // =====================================================
-    // ĐI TỚI QUẢN LÝ TRẢ SÁCH
-    // =====================================================
     private void goToQuanLyTraSach() {
 
         clickFirstVisible(
@@ -120,33 +106,29 @@ public class timKiemTraSachTest {
     }
 
     // =====================================================
-    // TC01 - TÌM KIẾM THEO MÃ PHIẾU MƯỢN
-    // =====================================================
+// TC01 - TÌM KIẾM THEO MÃ PHIẾU MƯỢN NGẪU NHIÊN
+// =====================================================
     @Test
-    public void TS_F001_timKiemThanhCongBangMaPhieuMuon() {
+    public void TS_F001_timKiemThanhCongBangMaPhieuMuonNgauNhien() {
+        List<WebElement> columns = driver.findElements(By.xpath("//table//tbody//tr/td[1]"));
 
-        timKiem(MA_PHIEU_MUON);
-
-        wait.until(ExpectedConditions.textToBePresentInElementLocated(
-                By.tagName("table"),
-                MA_PHIEU_MUON
+        if (columns.isEmpty()) {
+            Assert.fail("Không có dữ liệu trong bảng để thực hiện test tìm kiếm ngẫu nhiên!");
+        }
+        Random rand = new Random();
+        int randomIndex = rand.nextInt(columns.size());
+        String maNgauNhien = columns.get(randomIndex).getText().trim();
+        timKiem(maNgauNhien);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//table//tbody//tr[td[contains(normalize-space(),'" + maNgauNhien + "')]]")
         ));
 
-        WebElement row = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//table//tbody//tr[td[contains(normalize-space(),'" + MA_PHIEU_MUON + "')]]")
-        ));
-
-        System.out.println("Row: " + row.getText());
-
+        WebElement row = driver.findElement(By.xpath("//table//tbody//tr[td[contains(normalize-space(),'" + maNgauNhien + "')]]"));
         Assert.assertTrue(
-                row.getText().contains(MA_PHIEU_MUON),
-                "Không tìm thấy mã phiếu mượn!"
+                row.getText().contains(maNgauNhien),
+                "Kết quả tìm kiếm không khớp với mã phiếu mượn đã nhập!"
         );
     }
-
-    // =====================================================
-    // TC02 - TÌM KIẾM THEO TÊN NGƯỜI MƯỢN
-    // =====================================================
     @Test
     public void TS_F002_timKiemThanhCongBangTenNguoiMuon() {
 
@@ -161,17 +143,11 @@ public class timKiemTraSachTest {
                 By.xpath("//table//tbody//tr[td[contains(normalize-space(),'" + TEN_NGUOI_MUON + "')]]")
         ));
 
-        System.out.println("Row: " + row.getText());
-
         Assert.assertTrue(
                 row.getText().contains(TEN_NGUOI_MUON),
                 "Không tìm thấy tên người mượn!"
         );
     }
-
-    // =====================================================
-    // TC03 - TÌM KIẾM KHÔNG TỒN TẠI
-    // =====================================================
     @Test
     public void TS_F003_timKiemKhongThanhCongBangTenHoacMa() {
 
@@ -203,10 +179,6 @@ public class timKiemTraSachTest {
 
         System.out.println("PASS: Không có kết quả tìm kiếm.");
     }
-
-    // =====================================================
-    // HÀM TÌM KIẾM CHUNG
-    // =====================================================
     private void timKiem(String tuKhoa) {
 
         System.out.println("Tìm kiếm: " + tuKhoa);
@@ -255,10 +227,6 @@ public class timKiemTraSachTest {
         element.clear();
         element.sendKeys(value);
     }
-
-    // =====================================================
-    // CLICK
-    // =====================================================
     private void clickFirstVisible(By... locators) {
         WebElement element = findFirstVisible(locators);
 
@@ -268,10 +236,6 @@ public class timKiemTraSachTest {
             ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
         }
     }
-
-    // =====================================================
-    // FIND FIRST VISIBLE
-    // =====================================================
     private WebElement findFirstVisible(By... locators) {
 
         for (By locator : locators) {
