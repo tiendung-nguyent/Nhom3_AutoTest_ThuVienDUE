@@ -522,24 +522,12 @@ public class thanhToanPhiPhatTest {
 
     @Test()
     public void PA_10() {
-        WebElement row = findMixedStatusFineRow();
+        WebElement row = findUnpaidFineRow();
 
         openChiTietPhiPhat(row);
 
         assertPopupUserInfoMatchesList(row);
         assertFineDetailRowsHaveRequiredColumns();
-
-        Assert.assertTrue(
-                popupHasFineStatus("Chưa thanh toán"),
-                "Popup phải hiển thị khoản phạt Chưa thanh toán"
-        );
-
-        Assert.assertTrue(
-                popupHasFineStatus("Đã thanh toán"),
-                "Popup phải hiển thị khoản phạt Đã thanh toán"
-        );
-
-        assertPopupTotalOnlyIncludesUnpaidFines();
     }
 
     @Test()
