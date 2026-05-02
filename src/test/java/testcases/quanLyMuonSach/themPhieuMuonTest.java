@@ -11,6 +11,7 @@ import pageobjects.LoginPage;
 import pageobjects.SidebarPage;
 import pageobjects.nguoiDungPage;
 import pageobjects.quanLyMuonSachPage;
+import pageobjects.quanLySachPage;
 
 public class themPhieuMuonTest {
 
@@ -31,7 +32,7 @@ public class themPhieuMuonTest {
     }
 
     @Test()
-    public void BR_F001() {
+    public void BR_01() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
         sidebarPage.gotoUsers();
@@ -48,7 +49,7 @@ public class themPhieuMuonTest {
         Assert.assertEquals(muonSachPage.getToastMessage(), expected);
     }
     @Test()
-    public void BR_F002() {
+    public void BR_02() {
 
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
 
@@ -62,7 +63,7 @@ public class themPhieuMuonTest {
         Assert.assertEquals(actualError, expectedError, "ERROR: Thông báo lỗi không khớp hoặc không hiển thị!");
     }
     @Test
-    public void BR_F003() {
+    public void BR_03() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
 
@@ -80,7 +81,7 @@ public class themPhieuMuonTest {
 
     }
     @Test
-    public void BR_F004(){
+    public void BR_04(){
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
         sidebarPage.gotoUsers();
@@ -96,7 +97,7 @@ public class themPhieuMuonTest {
 
     }
     @Test
-    public void BR_F005(){
+    public void BR_05(){
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
         sidebarPage.gotoUsers();
@@ -112,7 +113,35 @@ public class themPhieuMuonTest {
         String expected = "Không tìm thấy sách";
         Assert.assertEquals(muonSachPage.getToastMessage(), expected);
     }
+    @Test
+    public void BR_06() {
+        SidebarPage sidebarPage = new SidebarPage();
+        quanLySachPage sachPage = new quanLySachPage();
+        quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
+        nguoiDungPage nguoiDung = new nguoiDungPage();
 
+        sidebarPage.gotoUsers();
+
+        String maDocGiaHopLe = nguoiDung.getUnqualifiedReaderID();
+
+        sidebarPage.gotoBooks();
+        sachPage.clickXemCuonSachDauTien();
+        String maSachViPham = sachPage.getMaSachDangMuon();
+
+        sidebarPage.gotoBorrow();
+        muonSachPage.clickThemPhieuMuon();
+
+        muonSachPage.enterMaNguoiDung(maDocGiaHopLe);
+
+        muonSachPage.enterMaSachAtRow(0, maSachViPham);
+
+        muonSachPage.clickLuuPhieuMuon();
+
+        String expectedMsg = "Không tìm thấy sách";
+        String actualMsg = muonSachPage.getToastMessage();
+
+        Assert.assertEquals(actualMsg, expectedMsg, "LỖI: Thông báo không đúng khi mượn sách đang bị mượn!");
+    }
     @AfterMethod
     public void quitBrowser() {
         if (Constant.WEBDRIVER != null) {

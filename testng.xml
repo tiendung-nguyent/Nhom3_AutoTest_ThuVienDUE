@@ -4,10 +4,11 @@
     <listeners>
         <listener class-name="utils.TestListener"/>
     </listeners>
-    <test name="XacNhanTraSachTest">
-        <classes>
-            <class name="testcases.quanlytrasach.XacNhanTraSachTest"/>
-        </classes>
+    <test name="All Tests">
+        <packages>
+            <package name="testcases.quanLyMuonSach"/>
+            <package name="testcases.quanlytrasach"/>
+        </packages>
     </test>
 </suite>
 

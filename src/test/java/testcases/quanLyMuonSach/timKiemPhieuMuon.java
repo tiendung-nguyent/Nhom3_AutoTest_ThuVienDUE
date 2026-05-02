@@ -31,7 +31,7 @@ public class timKiemPhieuMuon {
 
     }
     @Test()
-    public void BR_T001() {
+    public void BR_16() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
         sidebarPage.gotoUsers();
@@ -59,7 +59,7 @@ public class timKiemPhieuMuon {
 
     }
     @Test()
-    public void BR_T002() {
+    public void BR_17() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
 
@@ -79,7 +79,7 @@ public class timKiemPhieuMuon {
         System.out.println("Test BR_T002 PASS: Tìm kiếm theo Mã người dùng '" + maNguoiDungSearch + "' thành công!");
     }
     @Test()
-    public void BR_T003() {
+    public void BR_18() {
         SidebarPage sidebarPage = new SidebarPage();
 
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
@@ -97,7 +97,7 @@ public class timKiemPhieuMuon {
         System.out.println("Test BR_T003 PASS: Hệ thống đã báo lỗi đúng khi tìm mã không tồn tại.");
     }
     @Test()
-    public void BR_T004() {
+    public void BR_19() {
         SidebarPage sidebarPage = new SidebarPage();
         quanLyMuonSachPage muonSachPage = new quanLyMuonSachPage();
 
