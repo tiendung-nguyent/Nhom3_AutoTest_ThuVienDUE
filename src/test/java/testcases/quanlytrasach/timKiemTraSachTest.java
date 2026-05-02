@@ -109,7 +109,7 @@ public class timKiemTraSachTest {
 // TC01 - TÌM KIẾM THEO MÃ PHIẾU MƯỢN NGẪU NHIÊN
 // =====================================================
     @Test
-    public void TS_F001_timKiemThanhCongBangMaPhieuMuonNgauNhien() {
+    public void PA_28() {
         List<WebElement> columns = driver.findElements(By.xpath("//table//tbody//tr/td[1]"));
 
         if (columns.isEmpty()) {
@@ -130,7 +130,7 @@ public class timKiemTraSachTest {
         );
     }
     @Test
-    public void TS_F002_timKiemThanhCongBangTenNguoiMuon() {
+    public void PA_29() {
 
         timKiem(TEN_NGUOI_MUON);
 
@@ -149,7 +149,7 @@ public class timKiemTraSachTest {
         );
     }
     @Test
-    public void TS_F003_timKiemKhongThanhCongBangTenHoacMa() {
+    public void PA_30() {
 
         timKiem(TU_KHOA_KHONG_TON_TAI);
 
