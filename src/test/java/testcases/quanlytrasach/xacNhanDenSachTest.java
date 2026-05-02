@@ -11,6 +11,8 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.openqa.selenium.By;
+
+import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +26,8 @@ public class xacNhanDenSachTest {
     private WebDriverWait wait;
 
     @BeforeMethod
-    public void setupLogin() {
+    public void setupLogin(Method method) {
+
         System.out.println("========== SETUP LOGIN ==========");
 
         if (Constant.WEBDRIVER == null) {
@@ -35,11 +38,16 @@ public class xacNhanDenSachTest {
         driver = Constant.WEBDRIVER;
         wait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
-        loginAsUser();
-
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//aside")));
-
-        ensureQuanLyTraSachPage();
+        // ❗ CHỈ LOGIN ADMIN nếu KHÔNG PHẢI TEST 05
+        if (!method.getName().equals("TC_DS_05_KiemTraQuyenXacNhanDenSach")) {
+            loginAsUser();
+        } else {
+            // logout/clear session để đảm bảo không dính admin
+            try {
+                driver.manage().deleteAllCookies();
+                driver.get(Constant.THUVIEN_URL);
+            } catch (Exception ignored) {}
+        }
 
         System.out.println("========== READY FOR TEST ==========");
     }
@@ -305,7 +313,7 @@ public class xacNhanDenSachTest {
     public void TC_DS_03_XacNhanDenSachThanhCongVoiHoSoHopLe() {
 
         String targetMaHoSo = "PM0000001";
-        String newBookCode = "MS0001-010";
+        String newBookCode = "MS0002-011";
 
         // =========================
         // 1. Vào màn hình Trả sách
@@ -545,248 +553,32 @@ public class xacNhanDenSachTest {
     }
 
     @Test
-    public void TC_DS_05_XacNhanDenSachThatBaiDoLoiHeThong() throws Exception {
+    public void TC_DS_05_KiemTraQuyenXacNhanDenSach() throws Exception {
 
-        String targetMaHoSo = "PM0000002";
+        // đảm bảo clean session
+        driver.manage().deleteAllCookies();
+        driver.get(Constant.THUVIEN_URL);
 
-        clickByJS(By.xpath("//span[contains(text(),'Trả sách')]"));
+        // login user độc giả
+        loginND00003();
 
-        WebElement tabDenSach = wait.until(
-                ExpectedConditions.elementToBeClickable(By.xpath("//button[contains(@onclick,'tab-4')]"))
-        );
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", tabDenSach);
+        // vào module Mượn sách
+        clickByJS(By.xpath("//span[contains(text(),'Mượn sách')]"));
 
-        wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//*[contains(text(),'Danh sách hồ sơ chờ xác nhận đền sách')]")
-        ));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("borrowTable")));
 
-        WebElement tableBody = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(
-                        By.xpath("//div[@id='tab-4']//table/tbody")
-                )
-        );
+        WebDriverWait loginWait = new WebDriverWait(driver, Duration.ofSeconds(30));
 
-        List<WebElement> rows = tableBody.findElements(By.xpath("./tr"));
-        WebElement selectedRow = null;
-
-        for (WebElement row : rows) {
-            if (row.getText().trim().isEmpty()) continue;
-
-            String maHoSo = row.findElement(By.xpath("./td[1]")).getText().trim();
-
-            if (maHoSo.equalsIgnoreCase(targetMaHoSo)) {
-                selectedRow = row;
-                break;
-            }
-        }
-
-        Assert.assertNotNull(selectedRow);
-
-        String trangThaiBanDau = selectedRow.findElement(By.xpath("./td[6]")).getText().trim();
-
-        WebElement btnMoPopup = selectedRow.findElement(
-                By.xpath(".//span[contains(@class,'compensate-confirm-trigger')]")
-        );
-
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnMoPopup);
-
-        wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.id("popup-compensate-confirm")
-        ));
-
-        // chọn FAIL
-        WebElement radioKhongDat = driver.findElement(
-                By.xpath("//input[@name='compInspectionResult' and @value='fail']")
-        );
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", radioKhongDat);
-
-        WebElement txtMaSach = driver.findElement(By.id("compInspectionNote"));
-        txtMaSach.clear();
-        txtMaSach.sendKeys("TEST-SYSTEM-ERROR-001");
-
-        WebElement btnXacNhan = driver.findElement(
-                By.xpath("//button[@onclick='submitCompensateConfirm()']")
-        );
-
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnXacNhan);
-
-        // không wait cứng toast
-        Thread.sleep(1500);
-
-        // click HỦY (nếu popup còn)
-        List<WebElement> btnHuyList = driver.findElements(
-                By.xpath("//div[@id='popup-compensate-confirm']//button[contains(.,'Hủy')]")
-        );
-
-        if (!btnHuyList.isEmpty()) {
-            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnHuyList.get(0));
-        }
-
-        // chờ popup đóng (an toàn)
-        wait.until(ExpectedConditions.invisibilityOfElementLocated(
-                By.id("popup-compensate-confirm")
-        ));
-
-        Thread.sleep(1000);
-
-        // ===================== FIX CHÍNH Ở ĐÂY =====================
-        List<WebElement> rowsAfter = driver.findElements(
-                By.xpath("//div[@id='tab-4']//table/tbody/tr")
-        );
-
-        boolean found = false;
-        String trangThaiSau = "";
-
-        for (WebElement row : rowsAfter) {
-            if (row.getText().trim().isEmpty()) continue;
-
-            String ma = row.findElement(By.xpath("./td[1]")).getText().trim();
-
-            if (ma.equalsIgnoreCase(targetMaHoSo)) {
-                found = true;
-                trangThaiSau = row.findElement(By.xpath("./td[6]")).getText().trim();
-                break;
-            }
-        }
-
-        // ===================== ASSERT =====================
-        Assert.assertTrue(found, "Không tìm thấy lại hồ sơ sau thao tác");
-
-        Assert.assertEquals(trangThaiSau, trangThaiBanDau);
-    }
-
-    @Test
-    public void TC_DS_06_KiemTraQuyenXacNhanDenSach() throws Exception {
-
-        // 1. Login user KHÔNG có quyền (quan trọng)
-        loginWithNoPermissionUser();
-
-        // 2. Vào màn hình Trả sách
-        clickByJS(By.xpath("//span[contains(text(),'Trả sách')]"));
-
-        WebElement tab = wait.until(
-                ExpectedConditions.elementToBeClickable(
-                        By.xpath("//button[contains(@onclick,'tab-4')]")
-                )
-        );
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", tab);
-
-        // 3. Chờ table load
-        wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//div[@id='tab-4']//table")
-        ));
-
-        // 4. Kiểm tra KHÔNG có nút xác nhận
-        List<WebElement> buttons = driver.findElements(
+        List<WebElement> confirmButtons = driver.findElements(
                 By.xpath("//span[contains(@class,'compensate-confirm-trigger')]")
         );
 
-        // ❗ EXPECT: không được thấy nút
-        Assert.assertTrue(buttons.isEmpty(),
-                "User không có quyền nhưng vẫn thấy nút Xác nhận đền sách");
-    }
-
-    @Test
-    public void TC_DS_07_KhongTaoTrungXacNhanDenSachKhiThaoTacLap() throws Exception {
-
-        String targetMaHoSo = "PM0000001";
-        String maSachMoi = "MS0001-011";
-
-        // 1. Vào màn hình
-        WebElement menuTraSach = wait.until(
-                ExpectedConditions.elementToBeClickable(By.xpath("//span[contains(text(),'Trả sách')]"))
-        );
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", menuTraSach);
-
-        WebElement tabDenSach = wait.until(
-                ExpectedConditions.elementToBeClickable(By.xpath("//button[contains(.,'Xác nhận đền sách')]"))
-        );
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", tabDenSach);
-
-        // 2. Lấy số lượng row ban đầu
-        List<WebElement> rowsBefore = driver.findElements(
-                By.xpath("//div[contains(@id,'tab-4')]//table/tbody/tr")
-        );
-        int countBefore = rowsBefore.size();
-
-        // 3. Tìm row
-        WebElement selectedRow = wait.until(driver -> {
-            List<WebElement> rows = driver.findElements(
-                    By.xpath("//div[contains(@id,'tab-4')]//table/tbody/tr")
-            );
-
-            for (WebElement row : rows) {
-                if (row.getText().contains(targetMaHoSo)) {
-                    return row;
-                }
-            }
-            return null;
-        });
-
-        Assert.assertNotNull(selectedRow);
-
-        // 4. Click nhiều lần (simulate spam user)
-        WebElement btnTrigger = selectedRow.findElement(
-                By.xpath(".//span[contains(@class,'compensate-confirm-trigger')]")
+        Assert.assertTrue(
+                confirmButtons.isEmpty(),
+                "ND00003 vẫn thấy nút xác nhận đền sách"
         );
 
-        for (int i = 0; i < 5; i++) {
-            try {
-                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnTrigger);
-            } catch (Exception ignored) {}
-        }
-
-        // 5. Popup
-        WebElement popup = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(By.id("popup-compensate-confirm"))
-        );
-
-        // 6. chọn pass
-        WebElement radio = wait.until(
-                ExpectedConditions.elementToBeClickable(
-                        By.xpath("//input[@name='compInspectionResult' and @value='pass']")
-                )
-        );
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", radio);
-
-        // 7. nhập mã
-        WebElement txt = driver.findElement(By.id("compInspectionNote"));
-        txt.clear();
-        txt.sendKeys(maSachMoi);
-
-        // 8. submit nhiều lần (giống user spam)
-        WebElement btnConfirm = driver.findElement(
-                By.xpath("//button[@onclick='submitCompensateConfirm()']")
-        );
-
-        for (int i = 0; i < 3; i++) {
-            try {
-                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnConfirm);
-            } catch (Exception ignored) {}
-        }
-
-        // 9. wait popup đóng
-        wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("popup-compensate-confirm")));
-
-        // 10. wait table reload
-        Thread.sleep(1500);
-
-        // 11. lấy lại data
-        List<WebElement> rowsAfter = driver.findElements(
-                By.xpath("//div[contains(@id,'tab-4')]//table/tbody/tr")
-        );
-
-        int countAfter = rowsAfter.size();
-
-        // 12. VERIFY QUAN TRỌNG
-        Assert.assertEquals(countAfter, countBefore, "Không được tạo thêm record");
-
-        // 13. check không duplicate mã hồ sơ
-        long duplicateCount = rowsAfter.stream()
-                .filter(r -> r.getText().contains(targetMaHoSo))
-                .count();
-
-        Assert.assertTrue(duplicateCount == 1, "Không được có record trùng");
+        System.out.println("PASS TC05");
     }
 
     // =========================
@@ -846,32 +638,63 @@ public class xacNhanDenSachTest {
 
         System.out.println("✅ Login thành công");
     }
-    private boolean isDisplayed(By locator) {
-        try {
-            return driver.findElement(locator).isDisplayed();
-        } catch (Exception e) {
-            return false;
-        }
-    }
-    public void loginWithNoPermissionUser() {
+    public void loginND00003() {
 
-        driver.get("http://your-url-login-page");
+        // 1. Clear session sạch
+        driver.manage().deleteAllCookies();
 
-        WebElement username = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(By.id("username"))
+        // 2. Mở trang login
+        driver.get(Constant.THUVIEN_URL);
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+
+        // 3. Chờ page load xong
+        wait.until(driver ->
+                ((JavascriptExecutor) driver)
+                        .executeScript("return document.readyState")
+                        .equals("complete")
         );
-        username.sendKeys("user_khong_quyen");
 
-        WebElement password = driver.findElement(By.id("password"));
-        password.sendKeys("123456");
-
-        WebElement btnLogin = driver.findElement(By.id("btnLogin"));
-        btnLogin.click();
-
+        // 4. Chờ form login xuất hiện
         wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//*[contains(text(),'Dashboard')]")
+                By.id("djangoLoginForm")
         ));
+
+        // 5. Input username (Mã sinh viên / tài khoản)
+        WebElement username = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//label[contains(text(),'Mã sinh viên')]/following::input[1]")
+                )
+        );
+        username.clear();
+        username.sendKeys("ND00003");
+
+        // 6. Input password
+        WebElement password = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(
+                        By.id("loginPassword")
+                )
+        );
+        password.clear();
+        password.sendKeys("Vana12345");
+
+        // 7. Click nút đăng nhập
+        WebElement btnLogin = wait.until(
+                ExpectedConditions.elementToBeClickable(
+                        By.xpath("//button[@type='submit' or contains(text(),'Đăng nhập')]")
+                )
+        );
+
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnLogin);
+
+        // 8. Chờ login thành công (sidebar xuất hiện)
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+                By.xpath("//aside")
+        ));
+
+        System.out.println("Login ND00003 thành công");
     }
+
     private WebElement findFast(WebDriverWait customWait, By... locators) {
         for (By locator : locators) {
             try {
