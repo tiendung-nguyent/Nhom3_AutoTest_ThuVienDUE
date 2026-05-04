@@ -7,47 +7,33 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
 import org.testng.annotations.*;
-import java.util.Random;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Random;
 
 public class timKiemTraSachTest {
+
     private static final String TEN_NGUOI_MUON = "Nguyễn Văn A";
     private static final String TU_KHOA_KHONG_TON_TAI = "Trần Văn Z";
 
     private WebDriver driver;
     private WebDriverWait wait;
+    @BeforeMethod
+    public void setUp() {
+        System.out.println("========== SETUP MỖI TEST ==========");
 
-    // =====================================================
-    // LOGIN 1 LẦN DUY NHẤT TRƯỚC TOÀN BỘ TEST CASE
-    // =====================================================
-    @BeforeClass
-    public void setupOnce() {
-        System.out.println("========== SETUP 1 LẦN ==========");
-
-        if (Constant.WEBDRIVER == null) {
-            Constant.WEBDRIVER = new ChromeDriver();
-            Constant.WEBDRIVER.manage().window().maximize();
-        }
+        Constant.WEBDRIVER = new ChromeDriver();
+        Constant.WEBDRIVER.manage().window().maximize();
 
         driver = Constant.WEBDRIVER;
         wait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
-        loginAsUser();
-
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//aside")));
-
-        System.out.println("========== LOGIN THÀNH CÔNG ==========");
+        loginAsUser();          // login
+        goToQuanLyTraSach();    // vào trang luôn
     }
 
-    @BeforeMethod
-    public void goToReturnPageBeforeEachTest() {
-        System.out.println("========== VÀO QUẢN LÝ TRẢ SÁCH ==========");
-        goToQuanLyTraSach();
-    }
-
-    @AfterClass
+    @AfterMethod
     public void tearDown() {
         if (Constant.WEBDRIVER != null) {
             Constant.WEBDRIVER.quit();
@@ -55,6 +41,9 @@ public class timKiemTraSachTest {
         }
     }
 
+    // =====================================================
+    // LOGIN
+    // =====================================================
     private void loginAsUser() {
         driver.get(Constant.THUVIEN_URL);
 
@@ -86,6 +75,9 @@ public class timKiemTraSachTest {
         ));
     }
 
+    // =====================================================
+    // NAVIGATION
+    // =====================================================
     private void goToQuanLyTraSach() {
 
         clickFirstVisible(
@@ -106,32 +98,41 @@ public class timKiemTraSachTest {
     }
 
     // =====================================================
-// TC01 - TÌM KIẾM THEO MÃ PHIẾU MƯỢN NGẪU NHIÊN
-// =====================================================
+    // TEST CASES
+    // =====================================================
+
+    // TC01 - tìm theo mã ngẫu nhiên
     @Test
     public void PA_28() {
         List<WebElement> columns = driver.findElements(By.xpath("//table//tbody//tr/td[1]"));
 
         if (columns.isEmpty()) {
-            Assert.fail("Không có dữ liệu trong bảng để thực hiện test tìm kiếm ngẫu nhiên!");
+            Assert.fail("Không có dữ liệu trong bảng để test!");
         }
+
         Random rand = new Random();
         int randomIndex = rand.nextInt(columns.size());
         String maNgauNhien = columns.get(randomIndex).getText().trim();
+
         timKiem(maNgauNhien);
+
         wait.until(ExpectedConditions.visibilityOfElementLocated(
                 By.xpath("//table//tbody//tr[td[contains(normalize-space(),'" + maNgauNhien + "')]]")
         ));
 
-        WebElement row = driver.findElement(By.xpath("//table//tbody//tr[td[contains(normalize-space(),'" + maNgauNhien + "')]]"));
+        WebElement row = driver.findElement(
+                By.xpath("//table//tbody//tr[td[contains(normalize-space(),'" + maNgauNhien + "')]]")
+        );
+
         Assert.assertTrue(
                 row.getText().contains(maNgauNhien),
-                "Kết quả tìm kiếm không khớp với mã phiếu mượn đã nhập!"
+                "Kết quả không đúng!"
         );
     }
+
+    // TC02 - tìm theo tên
     @Test
     public void PA_29() {
-
         timKiem(TEN_NGUOI_MUON);
 
         wait.until(ExpectedConditions.textToBePresentInElementLocated(
@@ -145,18 +146,14 @@ public class timKiemTraSachTest {
 
         Assert.assertTrue(
                 row.getText().contains(TEN_NGUOI_MUON),
-                "Không tìm thấy tên người mượn!"
+                "Không tìm thấy tên!"
         );
     }
+
+    // TC03 - tìm không tồn tại
     @Test
     public void PA_30() {
-
         timKiem(TU_KHOA_KHONG_TON_TAI);
-
-        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(10));
-
-        // chờ table load xong (có thể có row hoặc không)
-        shortWait.until(d -> true);
 
         List<WebElement> rows = driver.findElements(By.xpath("//table//tbody//tr"));
 
@@ -165,7 +162,6 @@ public class timKiemTraSachTest {
         for (WebElement row : rows) {
             String text = row.getText().toLowerCase();
 
-            // loại row rác / empty row
             if (!text.contains("không có") &&
                     !text.contains("no data") &&
                     !text.trim().isEmpty()) {
@@ -175,13 +171,13 @@ public class timKiemTraSachTest {
         }
 
         Assert.assertFalse(hasRealData,
-                "Search không tồn tại nhưng vẫn còn dữ liệu trong bảng!");
-
-        System.out.println("PASS: Không có kết quả tìm kiếm.");
+                "Search sai: vẫn còn dữ liệu!");
     }
-    private void timKiem(String tuKhoa) {
 
-        System.out.println("Tìm kiếm: " + tuKhoa);
+    // =====================================================
+    // SEARCH FUNCTION
+    // =====================================================
+    private void timKiem(String tuKhoa) {
 
         WebElement searchInput = wait.until(driver -> {
             for (By locator : new By[]{
@@ -209,24 +205,23 @@ public class timKiemTraSachTest {
                 By.xpath("//button[@onclick='performSearch()']")
         ));
 
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", btnSearch);
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btnSearch);
 
         wait.until(ExpectedConditions.or(
                 ExpectedConditions.presenceOfElementLocated(By.xpath("//table//tbody//tr")),
-                ExpectedConditions.presenceOfElementLocated(By.xpath("//*[contains(text(),'Không tìm thấy')]")),
-                ExpectedConditions.presenceOfElementLocated(By.xpath("//*[contains(text(),'Khong tim thay')]"))
+                ExpectedConditions.presenceOfElementLocated(By.xpath("//*[contains(text(),'Không tìm thấy')]"))
         ));
     }
 
     // =====================================================
-    // INPUT
+    // UTIL
     // =====================================================
     private void typeFirstVisible(String value, By... locators) {
         WebElement element = findFirstVisible(locators);
         element.clear();
         element.sendKeys(value);
     }
+
     private void clickFirstVisible(By... locators) {
         WebElement element = findFirstVisible(locators);
 
@@ -236,10 +231,9 @@ public class timKiemTraSachTest {
             ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
         }
     }
+
     private WebElement findFirstVisible(By... locators) {
-
         for (By locator : locators) {
-
             List<WebElement> elements = driver.findElements(locator);
 
             for (WebElement element : elements) {
@@ -247,11 +241,10 @@ public class timKiemTraSachTest {
                     if (element.isDisplayed()) {
                         return element;
                     }
-                } catch (StaleElementReferenceException ignored) {
-                }
+                } catch (StaleElementReferenceException ignored) {}
             }
         }
 
-        throw new NoSuchElementException("Không tìm thấy phần tử với các locator đã khai báo.");
+        throw new NoSuchElementException("Không tìm thấy element!");
     }
 }
