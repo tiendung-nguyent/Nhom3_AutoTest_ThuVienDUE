@@ -6,10 +6,7 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.testng.annotations.*;
 import org.openqa.selenium.By;
 import java.time.Duration;
 import java.lang.reflect.Method;
@@ -29,29 +26,20 @@ public class xacNhanDenSachTest {
     private Random rand = new Random();
 
     @BeforeMethod
-    public void setupLogin(Method method) {
+    public void setUp() {
+        System.out.println("========== SETUP ==========");
 
-
-        if (Constant.WEBDRIVER == null) {
-            Constant.WEBDRIVER = new ChromeDriver();
-            Constant.WEBDRIVER.manage().window().maximize();
-        }
+        Constant.WEBDRIVER = new ChromeDriver();
+        Constant.WEBDRIVER.manage().window().maximize();
 
         driver = Constant.WEBDRIVER;
         wait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
-        if (!method.getName().equals("TC_DS_05_KiemTraQuyenXacNhanDenSach")) {
-            loginAsUser();
-        } else {
-            try {
-                driver.manage().deleteAllCookies();
-                driver.get(Constant.THUVIEN_URL);
-            } catch (Exception ignored) {}
-        }
-
+        loginAsUser();
+        goToQuanLyTraSach(); // vào luôn trang cần test
     }
 
-    @AfterClass
+    @AfterMethod
     public void tearDown() {
         if (Constant.WEBDRIVER != null) {
             Constant.WEBDRIVER.quit();

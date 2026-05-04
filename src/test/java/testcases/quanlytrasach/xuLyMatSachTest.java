@@ -5,10 +5,7 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.testng.annotations.*;
 import org.openqa.selenium.By;
 import java.time.Duration;
 import java.util.List;
@@ -22,24 +19,20 @@ public class xuLyMatSachTest {
     private WebDriverWait wait;
 
     @BeforeMethod
-    public void setupLogin() {
+    public void setUp() {
+        System.out.println("========== SETUP ==========");
 
-        if (Constant.WEBDRIVER == null) {
-            Constant.WEBDRIVER = new ChromeDriver();
-            Constant.WEBDRIVER.manage().window().maximize();
-        }
+        Constant.WEBDRIVER = new ChromeDriver();
+        Constant.WEBDRIVER.manage().window().maximize();
 
         driver = Constant.WEBDRIVER;
         wait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
         loginAsUser();
-
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//aside")));
-
-        goToQuanLyTraSach();
+        goToQuanLyTraSach(); // vào luôn trang cần test
     }
 
-    @AfterClass
+    @AfterMethod
     public void tearDown() {
         if (Constant.WEBDRIVER != null) {
             Constant.WEBDRIVER.quit();
